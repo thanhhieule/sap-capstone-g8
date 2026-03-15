@@ -1,0 +1,127 @@
+managed implementation in class zbp_i_import unique;
+strict ( 2 );
+with draft;
+
+define behavior  for ZI_ATT_G8 alias Header
+persistent table zpr_att_g8
+draft table zpr_att_g8_d
+lock master
+total etag LastUpdatedAt
+authorization master ( instance, global )
+etag master LocalLastUpdatedAt
+with additional save
+{
+  create;
+  update;
+  delete ( precheck );
+
+  field ( readonly )
+  AttachmentUuid,
+  TotalCount,
+  SuccessCount,
+  WarningCount,
+  ErrorCount,
+  CreatedBy,
+  CreatedAt,
+  LastUpdatedBy,
+  LastUpdatedAt,
+  LocalLastUpdatedAt;
+
+  field ( numbering : managed ) AttachmentUuid;
+
+  association _Item { create ( features : instance ); with draft; }
+
+  validation vldBeforeSave on save { create; update; }
+
+  draft action ( features : instance ) Edit;
+  draft action Activate;
+  draft action Discard;
+  draft action Resume;
+  draft determine action Prepare { validation vldBeforeSave;  }
+
+  determination getDataFile on modify { field Attachment; }
+
+  determination updateBusinessObject on save { create; }
+
+  action ( features : instance ) testRun result [1] $self;
+
+  // --- Mapping Header ---
+  mapping for zpr_att_g8
+  {
+    AttachmentUuid = attachment_uuid;
+    Attachment = attachment;
+    Mimetype = mimetype;
+    FileName = file_name;
+    TotalCount = total_count;
+    SuccessCount = success_count;
+    WarningCount = warning_count;
+    ErrorCount = error_count;
+    CreatedBy = created_by;
+    CreatedAt = created_at;
+    LocalCreateAt = local_create_at;
+    LastUpdatedBy = last_updated_by;
+    LastUpdatedAt = last_updated_at;
+    LocalLastUpdatedAt = local_last_updated_at;
+  }
+}
+
+define behavior for ZI_LIST_G8 alias Item
+persistent table zpr_list_g8
+draft table zpr_list_g8_d
+lock dependent by _Header
+authorization dependent by _Header
+// etag master <field_name>
+with additional save
+{
+  update;
+  delete;
+
+  // --- Read Only Fields ---
+  field ( readonly ) AttachmentUuid, ItemUuid, RecNumber;
+
+  // --- Numbering ---
+  field ( numbering : managed ) ItemUuid;
+
+  // --- Associations ---
+  association _Header { with draft; }
+
+  determination vldData on modify { field Unit, PurchaseRequisitionPrice, PurReqnItemCurrency, DeliveryDate, QuantityReq; create; update; }
+
+  // --- Mapping Item ---
+mapping for zpr_list_g8
+{
+  AttachmentUuid               = attachment_uuid;
+  RecNumber                    = rec_number;
+  ItemUuid                     = item_uuid;
+
+  Status                       = status;
+
+  PrNo                         = pr_no;
+  PrItem                       = pr_item;
+  PurchaseRequisitionType      = purchaserequisitiontype;
+  PurReqnDescription           = purreqndescription;
+
+  Material                     = material;
+  QuantityReq                  = quantity_req;
+  Unit                         = unit;
+
+  PurchaseRequisitionPrice     = purchaserequisitionprice;
+  PurReqnItemCurrency          = purreqnitemcurrency;
+
+  PurchaseRequisitionItemText  = purchaserequisitionitemtext;
+  AccountAssignmentCategory    = accountassignmentcategory;
+  MaterialGroup                = materialgroup;
+
+  Plant                        = plant;
+  PurchasingGroup              = purchasing_group;
+  PurchasingOrganization       = purchasingorganization;
+
+  DeliveryDate                 = delivery_date;
+
+  MessageStandardtable         = message_standardtable;
+  Criticality                  = criticality;
+  Url                          = url;
+}
+
+
+}

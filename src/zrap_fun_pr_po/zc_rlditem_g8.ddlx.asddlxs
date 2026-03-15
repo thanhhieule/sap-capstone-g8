@@ -1,0 +1,111 @@
+ @Metadata.layer: #CORE
+@UI.headerInfo: {
+    typeName: 'Purchase Requisition Item',
+    typeNamePlural: 'Purchase Requisition Items',
+    title.value: 'PrNo',
+    description.value: 'PrItem'
+}
+
+annotate entity ZC_RLDITEM_G8 with
+{
+  
+  @UI.facet: [ {
+    label: 'Item', 
+    id: 'idItem', 
+    purpose: #STANDARD, 
+    position: 10 , 
+    type: #IDENTIFICATION_REFERENCE
+  } ]
+
+  @UI.lineItem: [ { position: 20 ,
+      type          : #WITH_URL,
+      url           : 'Url' } ]
+  @UI.identification: [ { position: 20 ,
+      type          : #WITH_URL,
+      url           : 'Url' } ]
+  @EndUserText.label: 'Purchase Req. No.'
+  PrNo;
+  
+  @UI.lineItem: [ { position: 30 } ] 
+  @UI.identification: [ { position: 30 } ]
+  @EndUserText.label: 'Item No.'
+  PrItem;
+  
+  @UI.lineItem: [ { position: 40 } ]
+  @UI.identification: [ { position: 40 } ]
+  @EndUserText.label: 'Req. Type'
+  Purchaserequisitiontype;
+  
+  @UI.lineItem: [ { position: 50 } ]
+  @UI.identification: [ { position: 50 } ]
+  @EndUserText.label: 'Description'
+  Purreqndescription;
+  
+  @UI.lineItem: [ { position: 60 } ]
+  @UI.identification: [ { position: 60 } ]
+  @EndUserText.label: 'Material'
+  Material;
+  
+  @UI.lineItem: [ { position: 70 } ]
+  @UI.identification: [ { position: 70 } ]
+  @EndUserText.label: 'Quantity'
+  QuantityReq;
+  
+  @UI.lineItem: [ { position: 80 } ]
+  @UI.identification: [ { position: 80 } ]
+  @EndUserText.label: 'Unit'
+  Unit;
+  
+  @UI.lineItem: [ { position: 90 } ]
+  @UI.identification: [ { position: 90 } ]
+  @EndUserText.label: 'Item Text'
+  Purchaserequisitionitemtext;
+  
+  @UI.lineItem: [ { position: 100 } ]
+  @UI.identification: [ { position: 100 } ]
+  @EndUserText.label: 'Acc. Assignment Cat.'
+  Accountassignmentcategory;
+  
+  @UI.lineItem: [ { position: 110 } ]
+  @UI.identification: [ { position: 110 } ]
+  @EndUserText.label: 'Valuation Price'
+  Purchaserequisitionprice;
+ 
+  @UI.lineItem: [ { position: 115 } ]
+  @UI.identification: [ { position: 115 } ]
+  @EndUserText.label: 'Net Price'
+  Netpr;
+  
+  @UI.lineItem: [ { position: 120 } ]
+  @UI.identification: [ { position: 120 } ]
+  @EndUserText.label: 'Currency'
+  Purreqnitemcurrency;
+  
+  @UI.lineItem: [ { position: 130 } ]
+  @UI.identification: [ { position: 130 } ]
+  @EndUserText.label: 'Material Group'
+  Materialgroup;
+  
+  @UI.lineItem: [ { position: 140 } ]
+  @UI.identification: [ { position: 140 } ]
+  @EndUserText.label: 'Plant'
+  Plant;
+  
+  @UI.lineItem: [ { position: 150 } ]
+  @UI.identification: [ { position: 150 } ]
+  @EndUserText.label: 'Purchasing Group'
+  PurchasingGroup;
+  
+  @UI.lineItem: [ { position: 160 } ]
+  @UI.identification: [ { position: 160 } ]
+  @EndUserText.label: 'Purchasing Org.'
+  Purchasingorganization;
+  
+  @UI.lineItem: [ { position: 170 } ]
+  @UI.identification: [ { position: 170 } ]
+  @EndUserText.label: 'Delivery Date'
+  DeliveryDate;
+  
+  @UI.hidden: true
+  Url;
+}

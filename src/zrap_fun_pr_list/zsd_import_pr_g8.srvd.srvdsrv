@@ -1,0 +1,6 @@
+@EndUserText.label: 'Service definition forZC_ATT_G8'
+define service ZSD_IMPORT_PR_G8 {
+  expose ZC_ATT_G8 as attachment;
+  expose ZC_LIST_G8 as detail;
+  expose I_BusinessUserVH as BusinessUserVH;
+}

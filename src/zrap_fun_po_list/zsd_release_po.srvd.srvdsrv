@@ -1,0 +1,5 @@
+@EndUserText.label: 'Service definition forZC_RLHEAD_PO'
+define service ZSD_RELEASE_PO {
+  expose ZC_RLHEAD_PO as header;
+  expose ZC_RLITEM_PO as item;
+}

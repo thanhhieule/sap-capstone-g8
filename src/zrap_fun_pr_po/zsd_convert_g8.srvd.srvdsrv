@@ -1,0 +1,5 @@
+@EndUserText.label: 'Service definition'
+define service ZSD_CONVERT_G8 {
+  expose ZC_RLDHEAD_G8 as head;
+  expose ZC_RLDITEM_G8 as item;
+}

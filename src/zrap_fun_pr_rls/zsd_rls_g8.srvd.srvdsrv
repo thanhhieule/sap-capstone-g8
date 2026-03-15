@@ -1,0 +1,5 @@
+@EndUserText.label: 'Service definition'
+define service ZSD_RLS_G8 {
+  expose ZC_RLSHEAD_G8 as head;
+  expose ZC_RLSITEM_G8 as item;
+}

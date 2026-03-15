@@ -1,0 +1,122 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: {
+    typeName: 'header', 
+    typeNamePlural: 'headers'
+  }
+}
+annotate entity ZC_RLSHEAD_PO_TEST with
+{
+@UI.facet: [
+  {
+    id: 'idHeader',
+    type: #IDENTIFICATION_REFERENCE,
+    label: 'Header',
+    position: 10
+  },
+  {
+    id: 'idItem',
+    type: #LINEITEM_REFERENCE,
+    label: 'Items',
+    targetElement: '_Item',
+    position: 20
+  }
+]
+  @UI.lineItem: [ { position: 20 ,
+      type          : #WITH_URL,
+      url           : 'Url' } ]
+  @UI.identification: [ { position: 20 ,
+      type          : #WITH_URL,
+      url           : 'Url' } ]
+  @EndUserText.label: 'Purchase Req. No.'
+  Ebeln;
+  
+  @UI.hidden: true
+  DefineKey;
+  
+  @UI.lineItem:       [ {  criticality: 'Criticality' } ]
+  @UI.identification: [ {  criticality: 'Criticality' } ]
+  @EndUserText.label: 'Status' 
+  @UI: {
+    lineItem: [
+      { position: 10 },
+      { type: #FOR_ACTION, dataAction: 'releasePO', label: 'Release PO', invocationGrouping: #CHANGE_SET },
+      { type: #FOR_ACTION, dataAction: 'unreleasePO', label: 'Reject PO', invocationGrouping: #CHANGE_SET }
+    ],
+    identification: [
+      { position: 10 },
+      { type: #FOR_ACTION, dataAction: 'releasePO', label: 'Release PO', invocationGrouping: #CHANGE_SET },
+      { type: #FOR_ACTION, dataAction: 'unreleasePO', label: 'Reject PO', invocationGrouping: #CHANGE_SET }
+    ]
+  } 
+  Status;
+  
+  @UI.lineItem: [ {
+    position: 30 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 30 
+  } ]
+  Bukrs;
+  
+  @UI.lineItem: [ {
+    position: 40 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 40 
+  } ]
+  Lifnr;
+  
+  @UI.lineItem: [ {
+    position: 50 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 50 
+  } ]
+  Ekorg;
+  
+  @UI.lineItem: [ {
+    position: 60 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 60 
+  } ]
+  Ekgrp;
+  
+  @UI.lineItem: [ {
+    position: 70 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 70 
+  } ]
+  Waers;
+  
+  @UI.lineItem: [ {
+    position: 80 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 80 
+  } ]
+  Erdat;
+  
+  @UI.lineItem: [ {
+    position: 90 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 90 
+  } ]
+  MessageStandardtable;
+  
+  @UI.hidden: true
+  Criticality;
+  
+  @UI.hidden: true
+  LocalLastChangedAt;
+}

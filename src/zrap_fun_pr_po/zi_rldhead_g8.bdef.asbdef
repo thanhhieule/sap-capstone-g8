@@ -1,0 +1,113 @@
+ managed implementation in class zbp_i_convert_g8 unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZI_RLDHEAD_G8 alias header
+persistent table zpr_rlshead_g8
+draft table zpr_rlshead_g8_D
+etag master LocalLastChangedAt
+lock master total etag LastChangedAt
+authorization master( instance, global )
+
+{
+  field ( readonly )
+    PrNo,
+    DefineKey,
+    Status,
+    PoNo,
+    Purchaserequisitiontype,
+    Plant,
+    PurchasingGroup,
+    Purchasingorganization,
+    CancelReasonCode,
+    CancelNote,
+    MessageStandardtable,
+    Criticality,
+    CreatedBy,
+    CreatedAt,
+    LocalLastChangedBy,
+    LocalLastChangedAt,
+    LastChangedAt;
+
+
+  create;
+  update ( features : instance );
+  delete ( features : instance );
+
+  action ( features : instance ) autoVendor result [1] $self;
+  action ( features : instance ) convertToPO result [1] $self;
+
+  determination updateItemPrice on modify { field Lifnr; }
+
+  association _Item { create; with draft; }
+
+  draft action ( features : instance ) Edit;
+  draft action Activate;
+  draft action Discard;
+  draft action Resume;
+  draft determine action Prepare;
+
+  mapping for zpr_rlshead_g8 corresponding
+  {
+    PrNo = PR_NO;
+    DefineKey = DEFINE_KEY;
+    Status = STATUS;
+    PoNo = PO_NO;
+    Lifnr = LIFNR;
+    Purchaserequisitiontype = PURCHASEREQUISITIONTYPE;
+    Plant = PLANT;
+    PurchasingGroup = PURCHASING_GROUP;
+    Purchasingorganization = PURCHASINGORGANIZATION;
+    CancelReasonCode = CANCEL_REASON_CODE;
+    CancelNote = CANCEL_NOTE;
+    MessageStandardtable = MESSAGE_STANDARDTABLE;
+    Criticality = CRITICALITY;
+    Url        = URL;
+    CreatedBy = CREATED_BY;
+    CreatedAt = CREATED_AT;
+    LocalLastChangedBy = LOCAL_LAST_CHANGED_BY;
+    LocalLastChangedAt = LOCAL_LAST_CHANGED_AT;
+    LastChangedAt = LAST_CHANGED_AT;
+  }
+}
+define behavior for ZI_RLDITEM_G8 alias item
+persistent table zpr_rlsitem_g8
+draft table zpr_rlsitem_g8_d
+lock dependent by _Header
+authorization dependent by _Header
+// etag master <field_name>
+{
+  update;
+  delete;
+
+  field ( readonly )
+   PRNo;
+
+  // --- Associations ---
+  association _Header { with draft; }
+
+  // --- Mapping Item ---
+mapping for zpr_rlsitem_g8 corresponding
+{
+    PRno                       = pr_no;
+    PRItem                     = pr_item;
+    Purchaserequisitiontype    = purchaserequisitiontype;
+    Purreqndescription         = purreqndescription;
+    Material                   = material;
+    QuantityReq                = quantity_req;
+    Unit                       = unit;
+    Purchaserequisitionitemtext = purchaserequisitionitemtext;
+    Accountassignmentcategory  = accountassignmentcategory;
+    Purchaserequisitionprice   = purchaserequisitionprice;
+    Netpr                      = netpr;
+    Purreqnitemcurrency        = purreqnitemcurrency;
+    Materialgroup              = materialgroup;
+    Plant                      = plant;
+    PurchasingGroup            = purchasing_group;
+    Purchasingorganization     = purchasingorganization;
+    DeliveryDate               = delivery_date;
+    Url                        = url;
+}
+
+
+}

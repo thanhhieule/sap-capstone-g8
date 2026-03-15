@@ -1,0 +1,137 @@
+//***********************************************************************
+//  [変更履歴]
+//   バージョン情報 ：V1.00  2025/12/24  IPS.KhueND        B8CK900063
+//   変更内容       ：機能_製造指図連携
+//----------------------------------------------------------------------*
+//   バージョン情報 ：V9.99  YYYY/MM/DD  変更者             移送番号
+//   変更内容       ：新規作成
+//***********************************************************************
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: {
+    typeName: 'Upload History',
+    typeNamePlural: 'Upload Histories',
+    title.value:  'FileName'
+  }
+}
+annotate entity  ZC_ATT_G8 with
+{
+  // ------------------------------------------------------
+  // レイアウト定義（ファセット）
+  // ------------------------------------------------------
+  @UI.facet: [
+      {
+          purpose: #HEADER,
+          type: #FIELDGROUP_REFERENCE,
+          position: 10,
+          targetQualifier: 'HeaderGroup'
+      },
+      {
+          id: 'AttachmentSection',
+          purpose: #STANDARD,
+          type: #COLLECTION,
+          label: 'Attachment',
+          position: 10
+      },
+      {
+          purpose: #STANDARD,
+          type: #FIELDGROUP_REFERENCE,
+          targetQualifier: 'AttachmentGroup',
+          parentId: 'AttachmentSection',
+          position: 10
+      },
+      {
+          id: 'ResultSection',
+          purpose: #STANDARD,
+          type: #COLLECTION,
+          label: 'Result',
+          position: 20
+      },
+      {
+          purpose: #STANDARD,
+          type: #FIELDGROUP_REFERENCE,
+          targetQualifier: 'ResultGroup',
+          parentId: 'ResultSection',
+          position: 20
+      },
+      {
+          purpose: #STANDARD,
+          type: #LINEITEM_REFERENCE,
+          label: 'Upload Items',
+          targetElement: '_Item',
+          position: 30
+      }
+  ]
+
+  // ------------------------------------------------------
+  // 項目アノテーション
+  // ------------------------------------------------------
+
+  @EndUserText.label: 'Attachment UUID'
+  @UI.fieldGroup: [{ qualifier: 'HeaderGroup', position: 10 }]
+  @UI.lineItem: [ { position: 10 } ]
+  AttachmentUUID;
+
+  @EndUserText.label: 'File Name'
+  @UI.fieldGroup: [{ qualifier: 'HeaderGroup', position: 20 }]
+  @UI.lineItem: [ { position: 30 } ]
+  @UI.selectionField: [{ position: 10 }]
+  FileName;
+
+  @EndUserText.label: 'Created By'
+  @UI.fieldGroup: [{ qualifier: 'HeaderGroup', position: 30 }]
+  @UI.lineItem: [ { position: 80 } ]
+  @UI.selectionField: [{ position: 20 }]
+  CreatedBy;
+
+  @EndUserText.label: 'Created At'
+  @UI.fieldGroup: [{ qualifier: 'HeaderGroup', position: 40 }]
+  @UI.lineItem: [ { position: 90 } ]
+  @UI.selectionField: [{ position: 30 }]
+  CreatedAt;
+
+  @EndUserText.label: 'Local Created At'
+  @UI.lineItem: [ { position: 100 } ]
+  LocalCreateAt;
+
+  @UI.fieldGroup: [{ qualifier: 'AttachmentGroup', position: 10 }]
+  @UI.facet: [{ exclude: true }]
+  @UI.lineItem: [ { hidden: true } ]
+  Attachment;
+
+  @EndUserText.label: 'MIME Type'
+  @UI.lineItem: [ { position: 20, label: 'MIME Type' } ]
+  Mimetype;
+
+  @EndUserText.label: 'Total Count'
+  @UI.fieldGroup: [{ qualifier: 'ResultGroup', position: 10 }]
+  @UI.lineItem: [ { position: 40 } ]
+  TotalCount;
+
+  @EndUserText.label: 'Success Count'
+  @UI.fieldGroup: [{ qualifier: 'ResultGroup', position: 20 }]
+  @UI.lineItem: [ { position: 50 } ]
+  SuccessCount;
+
+  @EndUserText.label: 'Warning Count'
+  @UI.fieldGroup: [{ qualifier: 'ResultGroup', position: 30 }]
+  @UI.lineItem: [ { position: 60 } ]
+  WarningCount;
+
+  @EndUserText.label: 'Error Count'
+  @UI.fieldGroup: [{ qualifier: 'ResultGroup', position: 40 }]
+  @UI.lineItem: [ { position: 70 } ]
+  ErrorCount;
+
+  @EndUserText.label: 'Last Updated By'
+  @UI.lineItem: [ { position: 110 } ]
+  LastUpdatedBy;
+
+  @EndUserText.label: 'Last Updated At'
+  @UI.lineItem: [ { position: 120 } ]
+  LastUpdatedAt;
+
+  @EndUserText.label: 'Local Last Updated At'
+  @UI.lineItem: [ { position: 130 } ]
+  LocalLastUpdatedAt;
+}

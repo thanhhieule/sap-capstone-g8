@@ -1,0 +1,24 @@
+ projection;
+strict ( 2 );
+use draft;
+
+define behavior for ZC_RLSHEAD_G8 //alias <alias_name>
+{
+
+  use action releasePR;
+  use action unreleasePR;
+
+  use action Edit;
+  use action Activate;
+  use action Discard;
+  use action Resume;
+  use action Prepare;
+
+  use association _Item { create; with draft; }
+}
+
+define behavior for ZC_RLSITEM_G8 //alias <alias_name>
+{
+
+  use association _Header { with draft; }
+}

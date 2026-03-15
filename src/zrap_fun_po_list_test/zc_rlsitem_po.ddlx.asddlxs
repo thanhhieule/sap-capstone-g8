@@ -1,0 +1,118 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: {
+    typeName: 'item', 
+    typeNamePlural: 'items'
+  }
+}
+annotate entity ZC_RLSITEM_PO with
+{
+  @UI.facet: [ {
+    label: 'Item', 
+    id: 'idItem', 
+    purpose: #STANDARD, 
+    position: 10 , 
+    type: #IDENTIFICATION_REFERENCE
+  } ]
+  @UI.lineItem: [ {
+    position: 10 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 10 
+  } ]
+  Ebeln;
+  
+  @UI.lineItem: [ {
+    position: 20 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 20 
+  } ]
+  Ebelp;
+  
+  @UI.lineItem: [{ position: 30,
+      type          : #WITH_URL,
+      url           : 'Url'  
+      }]
+  @UI.identification: [ {
+    position: 30 
+  } ]
+  Banfn;
+  
+  @UI.lineItem: [ {
+    position: 40 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 40 
+  } ]
+  Bnfpo;
+  
+  @UI.lineItem: [ {
+    position: 50 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 50 
+  } ]
+  Matnr;
+  
+  @UI.lineItem: [ {
+    position: 60 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 60 
+  } ]
+  Werks;
+  
+  @UI.lineItem: [ {
+    position: 70 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 70 
+  } ]
+  Menge;
+  
+  @UI.lineItem: [ {
+    position: 80 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 80 
+  } ]
+  Meins;
+  
+  @UI.lineItem: [ {
+    position: 90 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 90 
+  } ]
+  Netpr;
+  
+  @UI.lineItem: [ {
+    position: 100 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 100 
+  } ]
+  Waers;
+  
+  @UI.lineItem: [ {
+    position: 110 , 
+    importance: #MEDIUM
+  } ]
+  @UI.identification: [ {
+    position: 110 
+  } ]
+  Eindt;
+  
+  @UI.hidden: true
+  Url;
+}

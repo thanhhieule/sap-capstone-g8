@@ -1,0 +1,24 @@
+projection;
+strict ( 2 );
+use draft;
+
+define behavior for ZC_RLHEAD_PO //alias <alias_name>
+{
+
+  use action releasePO;
+  use action unreleasePO;
+
+  use action Edit;
+  use action Activate;
+  use action Discard;
+  use action Resume;
+  use action Prepare;
+
+  use association _Item { create; with draft; }
+}
+
+define behavior for ZC_RLITEM_PO //alias <alias_name>
+{
+
+  use association _Header { with draft; }
+}

@@ -1,0 +1,97 @@
+ @Metadata.layer: #CORE
+@UI: {
+  headerInfo: {
+    typeName: 'Puchase Requisition Header',
+    typeNamePlural: 'Puchase Requisition Headers',
+    title: { type: #STANDARD, value: 'PrNo' }
+  }
+}
+annotate entity ZC_RLSHEAD_G8 with
+{
+
+@UI.facet: [
+  {
+    id: 'idHeader',
+    type: #IDENTIFICATION_REFERENCE,
+    label: 'Header',
+    position: 10
+  },
+  {
+    id: 'idItem',
+    type: #LINEITEM_REFERENCE,
+    label: 'Items',
+    targetElement: '_Item',
+    position: 20
+  }
+]
+  
+  
+  @UI.hidden: true
+  Criticality;
+  
+  @UI.lineItem:       [ {  criticality: 'Criticality' } ]
+  @UI.identification: [ {  criticality: 'Criticality' } ]
+  @EndUserText.label: 'Status' 
+  @UI: {
+    lineItem: [
+      { position: 10 },
+      { type: #FOR_ACTION, dataAction: 'releasePR', label: 'Release PR', invocationGrouping: #CHANGE_SET },
+      { type: #FOR_ACTION, dataAction: 'unreleasePR', label: 'Reject PR', invocationGrouping: #CHANGE_SET }
+    ],
+    identification: [
+      { position: 10 },
+      { type: #FOR_ACTION, dataAction: 'releasePR', label: 'Release PR', invocationGrouping: #CHANGE_SET },
+      { type: #FOR_ACTION, dataAction: 'unreleasePR', label: 'Reject PR', invocationGrouping: #CHANGE_SET }
+    ]
+  } 
+  Status;
+
+  @UI.lineItem:       [ { position: 20 } ]
+  @UI.identification: [ { position: 20 } ]
+  @EndUserText.label: 'Purchase Req. No.'
+  @UI.selectionField: [{ position: 20 }]
+  PrNo;
+  
+  @EndUserText.label: 'Define Key'
+  @UI.selectionField: [{ position: 10 }]
+  DefineKey;
+  
+  @UI.lineItem:       [ { position: 30 } ]
+  @UI.identification: [ { position: 30 } ]
+  @EndUserText.label: 'Purchase Req. Type'
+  Purchaserequisitiontype;
+  
+  @UI.lineItem:       [ { position: 40 } ]
+  @UI.identification: [ { position: 40 } ]
+  @EndUserText.label: 'Plant'
+  Plant;
+  
+  @UI.lineItem:       [ { position: 50 } ]
+  @UI.identification: [ { position: 50 } ]
+  @EndUserText.label: 'Purchasing Group'
+  PurchasingGroup;
+  
+  @UI.lineItem:       [ { position: 60 } ]
+  @UI.identification: [ { position: 60 } ]
+  @EndUserText.label: 'Purchasing Organization'
+  Purchasingorganization;
+  
+  @UI.lineItem:       [ { position: 70 } ]
+  @UI.identification: [ { position: 70 } ]
+  @EndUserText.label: 'Cancel Reason Code'
+  CancelReasonCode;
+  
+  @UI.lineItem:       [ { position: 80 } ]
+  @UI.identification: [ { position: 80 } ]
+  @EndUserText.label: 'Cancel Note'
+  CancelNote;
+  
+  @UI.lineItem:       [ { position: 90 } ]
+  @UI.identification: [ { position: 90 } ]
+  @EndUserText.label: 'Message'
+  MessageStandardtable;
+  
+  @UI.hidden: true
+  @EndUserText.label: 'Last Changed At'
+  LocalLastChangedAt;
+}

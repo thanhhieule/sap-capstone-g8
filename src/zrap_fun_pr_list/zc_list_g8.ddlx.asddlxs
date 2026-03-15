@@ -1,0 +1,112 @@
+@Metadata.layer: #CORE
+@UI.headerInfo: {
+    typeName: 'Item',
+    typeNamePlural: 'Items',
+    title.value: 'RecNumber',
+    description.value: 'PrNo'
+}
+annotate entity  ZC_LIST_G8 with
+{
+  // ------------------------------------------------------
+  // Technical fields (hidden)
+  // ------------------------------------------------------
+
+  @UI.hidden: true
+  AttachmentUuid;
+
+  @UI.hidden: true
+  ItemUuid;
+
+  @UI.hidden: true
+  Criticality;
+
+  // ------------------------------------------------------
+  // Business fields – List Report
+  // ------------------------------------------------------
+
+  @EndUserText.label: 'Record Number'
+  @UI.lineItem: [{ position: 10 }]
+  RecNumber;
+
+  @EndUserText.label: 'Status'
+  @UI.lineItem: [{ position: 20, criticality: 'Criticality' }]
+  Status;  
+  
+  @EndUserText.label: 'PR Type'
+  @UI.lineItem: [{ position: 25 }]
+  PurchaseRequisitionType;
+
+  @EndUserText.label: 'PR Description'
+  @UI.lineItem: [{ position: 26 }]
+  PurReqnDescription;
+
+  @EndUserText.label: 'Purchase Requisition Number'
+  @UI.lineItem: [{ position: 30,
+      type          : #WITH_URL,
+      url           : 'Url'  
+      }]
+  PrNo;
+
+  @EndUserText.label: 'Purchase Requisition Item'
+  @UI.lineItem: [{ position: 40 }]
+  PrItem;
+
+  @EndUserText.label: 'Material'
+  @UI.lineItem: [{ position: 50 }]
+  Material;
+  
+  @EndUserText.label: 'Item Text'
+  @UI.lineItem: [{ position: 55 }]
+  PurchaseRequisitionItemText;
+
+  @EndUserText.label: 'Account Assignment'
+  @UI.lineItem: [{ position: 56 }]
+  AccountAssignmentCategory;
+  
+  @EndUserText.label: 'Quantity'
+  @UI.lineItem: [{ position: 60 }]
+  QuantityReq;
+  
+  @EndUserText.label: 'Price'
+  @UI.lineItem: [{ position: 65 }]
+  PurchaseRequisitionPrice;
+
+  @EndUserText.label: 'Currency'
+  @UI.lineItem: [{ position: 66 }]
+  PurReqnItemCurrency;
+
+  @EndUserText.label: 'Unit'
+  @UI.lineItem: [{ position: 70 }]
+  Unit;
+  
+  @EndUserText.label: 'Material Group'
+  @UI.lineItem: [{ position: 75 }]
+  MaterialGroup;
+  
+  @EndUserText.label: 'Delivery Date'
+  @UI.lineItem: [{ position: 80 }]
+  DeliveryDate;
+
+  @EndUserText.label: 'Plant'
+  @UI.lineItem: [{ position: 90 }]
+  Plant;
+
+  @EndUserText.label: 'Purchasing Group'
+  @UI.lineItem: [{ position: 110 }]
+  PurchasingGroup;
+  
+  @EndUserText.label: 'Purchasing Organization'
+  @UI.lineItem: [{ position: 115 }]
+  PurchasingOrganization;
+
+  // ------------------------------------------------------
+  // Message
+  // ------------------------------------------------------
+
+  @EndUserText.label: 'Message'
+  @UI.lineItem: [{ position: 120 }]
+  MessageStandardtable;
+  
+  @UI.hidden: true
+  Url;
+}

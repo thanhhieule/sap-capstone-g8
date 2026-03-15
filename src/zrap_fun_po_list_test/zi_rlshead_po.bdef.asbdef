@@ -1,0 +1,91 @@
+managed implementation in class ZI_RLSHEAD_PO_T unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZI_RLsHEAD_PO alias header
+persistent table zpo_head_g8_test
+draft table ZPO_HEAD_G8_D_T
+etag master LocalLastChangedAt
+lock master total etag  LastChangedAt
+authorization master( global )
+
+{
+  field ( readonly )
+   CreatedAt,
+   CreatedBy,
+   LastChangedAt,
+   LocalLastChangedAt,
+   LocalLastChangedBy;
+
+
+  create;
+  update;
+  delete;
+
+  action ( features : instance ) releasePO result [1] $self;
+  action ( features : instance ) unreleasePO
+    parameter ZI_RLS_RejectPar
+    result [1] $self;
+
+
+  association _Item { create; with draft; }
+
+  draft action Edit;
+  draft action Activate;
+  draft action Discard;
+  draft action Resume;
+  draft determine action Prepare;
+
+  mapping for zpo_head_g8_test
+  {
+    Ebeln = EBELN;
+    DefineKey = DEFINE_KEY;
+    Status = STATUS;
+    Bukrs = BUKRS;
+    Lifnr = LIFNR;
+    Ekorg = EKORG;
+    Ekgrp = EKGRP;
+    Waers = WAERS;
+    Erdat = ERDAT;
+    MessageStandardtable = MESSAGE_STANDARDTABLE;
+    Criticality = CRITICALITY;
+    Url = URL;
+    CreatedBy = CREATED_BY;
+    CreatedAt = CREATED_AT;
+    LocalLastChangedBy = LOCAL_LAST_CHANGED_BY;
+    LocalLastChangedAt = LOCAL_LAST_CHANGED_AT;
+    LastChangedAt = LAST_CHANGED_AT;
+  }
+}
+
+define behavior for ZI_RLSITEM_PO alias item
+persistent table zpo_item_g8_test
+draft table zpo_items_g8_d
+lock dependent by _Header
+authorization dependent by _Header
+{
+  update;
+  delete;
+
+  field ( readonly )
+    Ebeln,
+    Ebelp;
+
+  association _Header { with draft; }
+
+  mapping for zpo_item_g8_test corresponding
+  {
+    Ebeln = EBELN;
+    Ebelp = EBELP;
+    Banfn = BANFN;
+    Bnfpo = BNFPO;
+    Matnr = MATNR;
+    Werks = WERKS;
+    Menge = MENGE;
+    Meins = MEINS;
+    Netpr = NETPR;
+    Waers = WAERS;
+    Eindt = EINDT;
+    Url   = Url;
+  }
+}
