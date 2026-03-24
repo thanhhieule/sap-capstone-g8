@@ -3,7 +3,7 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <PROGDIR>
-    <NAME>ZALV_PO_FROM_PR_G8_2</NAME>
+    <NAME>ZALV_G8_PR_PO_VDR_RATE</NAME>
     <DBAPL>S</DBAPL>
     <SUBC>1</SUBC>
     <FIXPT>X</FIXPT>
@@ -12,45 +12,51 @@
    </PROGDIR>
    <TPOOL>
     <item>
-     <ID>I</ID>
-     <KEY>I02</KEY>
-     <ENTRY>Enter one or more filter conditions. Leave blank to show all data.</ENTRY>
-     <LENGTH>132</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>T01</KEY>
-     <ENTRY>PO from PR Report Filters</ENTRY>
-     <LENGTH>50</LENGTH>
-    </item>
-    <item>
      <ID>R</ID>
-     <ENTRY>Display Purchase Orders created from Purchase Requisitions (G8)</ENTRY>
-     <LENGTH>63</LENGTH>
+     <ENTRY>Display Vendor PR-to-PO Success Rate</ENTRY>
+     <LENGTH>36</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_IDEL</KEY>
+     <ENTRY>Include Deleted</ENTRY>
+     <LENGTH>23</LENGTH>
     </item>
     <item>
      <ID>S</ID>
      <KEY>S_BANFN</KEY>
-     <ENTRY>PR Number</ENTRY>
-     <LENGTH>17</LENGTH>
+     <ENTRY>Purchase Requisition</ENTRY>
+     <LENGTH>28</LENGTH>
     </item>
     <item>
      <ID>S</ID>
      <KEY>S_BEDAT</KEY>
-     <ENTRY>PO Document Date</ENTRY>
-     <LENGTH>24</LENGTH>
+     <ENTRY>PO Date</ENTRY>
+     <LENGTH>15</LENGTH>
     </item>
     <item>
      <ID>S</ID>
      <KEY>S_EBELN</KEY>
-     <ENTRY>PO Number</ENTRY>
+     <ENTRY>Purchase Order</ENTRY>
+     <LENGTH>22</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>S_EINDT</KEY>
+     <ENTRY>Delivery Date</ENTRY>
+     <LENGTH>21</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>S_EKGRP</KEY>
+     <ENTRY>Purchasing Group</ENTRY>
      <LENGTH>24</LENGTH>
     </item>
     <item>
      <ID>S</ID>
      <KEY>S_LIFNR</KEY>
-     <ENTRY>Vendor</ENTRY>
-     <LENGTH>14</LENGTH>
+     <ENTRY>Supplier</ENTRY>
+     <LENGTH>16</LENGTH>
     </item>
     <item>
      <ID>S</ID>
@@ -60,9 +66,9 @@
     </item>
     <item>
      <ID>S</ID>
-     <KEY>S_WERKS</KEY>
-     <ENTRY>Plant</ENTRY>
-     <LENGTH>13</LENGTH>
+     <KEY>S_NETPR</KEY>
+     <ENTRY> Net Price</ENTRY>
+     <LENGTH>18</LENGTH>
     </item>
    </TPOOL>
   </asx:values>

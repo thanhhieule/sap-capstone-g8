@@ -1,3 +1,77 @@
+CLASS lhc_item DEFINITION INHERITING FROM cl_abap_behavior_handler.
+
+  PRIVATE SECTION.
+
+    METHODS updateItemPrice2 FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR item~updateItemPrice2.
+
+ENDCLASS.
+
+CLASS lhc_item IMPLEMENTATION.
+
+METHOD updateItemPrice2.
+    DATA: lt_update_item TYPE TABLE FOR UPDATE zi_rldhead_g8\\item.
+
+    " 1. Đọc item vừa được trigger để lấy giá trị Netpr mới nhất
+    READ ENTITIES OF zi_rldhead_g8 IN LOCAL MODE
+      ENTITY item
+      FIELDS ( Netpr )
+      WITH CORRESPONDING #( keys )
+      RESULT DATA(lt_changed_items).
+
+    IF lt_changed_items IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " Lấy giá trị net price mới (giả định xử lý theo item đầu tiên)
+    DATA(lv_new_price) = lt_changed_items[ 1 ]-Netpr.
+
+    " 2. Tìm Header của (các) item này bằng cách đọc qua association trỏ ngược lên Header
+    " Lưu ý: Thay '\_Header' bằng tên association của bạn (ví dụ: \_Prhead, \_PurchaseRequisition,...)
+    READ ENTITIES OF zi_rldhead_g8 IN LOCAL MODE
+      ENTITY item BY \_Header
+      ALL FIELDS
+      WITH CORRESPONDING #( keys )
+      RESULT DATA(lt_headers).
+
+    IF lt_headers IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " 3. Từ Header tìm được, đọc TẤT CẢ các items thuộc PR đó qua association \_Item
+    READ ENTITIES OF zi_rldhead_g8 IN LOCAL MODE
+      ENTITY header BY \_Item
+      ALL FIELDS
+      WITH CORRESPONDING #( lt_headers )
+      RESULT DATA(lt_all_items).
+
+    " 4. Quét toàn bộ items của PR và gán giá mới
+    LOOP AT lt_all_items INTO DATA(ls_item).
+      " BƯỚC QUAN TRỌNG: Chỉ thêm vào bảng update nếu giá trị đang khác với giá mới.
+      " Việc này giúp NGĂN CHẶN LỖI VÒNG LẶP VÔ HẠN (Infinite Loop) khi entity liên tục bị modify.
+      IF ls_item-Netpr <> lv_new_price.
+        APPEND VALUE #(
+          %tky  = ls_item-%tky
+          Netpr = lv_new_price
+        ) TO lt_update_item.
+      ENDIF.
+    ENDLOOP.
+
+    " 5. Thực thi lệnh MODIFY để cập nhật đồng loạt các item
+    IF lt_update_item IS NOT INITIAL.
+      MODIFY ENTITIES OF zi_rldhead_g8 IN LOCAL MODE
+        ENTITY item
+        UPDATE
+        FIELDS ( Netpr )
+        WITH lt_update_item
+        REPORTED DATA(lt_reported_item)
+        FAILED   DATA(lt_failed_item).
+    ENDIF.
+
+  ENDMETHOD.
+
+ENDCLASS.
+
 CLASS lcl_handler DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     METHODS:

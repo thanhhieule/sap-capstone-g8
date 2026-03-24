@@ -83,6 +83,8 @@ authorization dependent by _Header
   field ( readonly )
    PRNo;
 
+  determination updateItemPrice2 on modify { field Netpr; }
+
   // --- Associations ---
   association _Header { with draft; }
 

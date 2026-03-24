@@ -47,7 +47,8 @@ CLASS zcl_g8_po_from_pr_alv DEFINITION
 ENDCLASS.
 
 
-CLASS zcl_g8_po_from_pr_alv IMPLEMENTATION.
+
+CLASS ZCL_G8_PO_FROM_PR_ALV IMPLEMENTATION.
 
 
   METHOD constructor.
@@ -58,14 +59,12 @@ CLASS zcl_g8_po_from_pr_alv IMPLEMENTATION.
   ENDMETHOD.
 
 
-
   METHOD run.
 
     get_data( ).
     display_alv( ).
 
   ENDMETHOD.
-
 
 
   METHOD get_data.
@@ -152,5 +151,4 @@ CLASS zcl_g8_po_from_pr_alv IMPLEMENTATION.
     ENDIF.
 
   ENDMETHOD.
-
 ENDCLASS.
