@@ -2,7 +2,7 @@ REPORT zalv_po_from_pr_g8_2.
 
 TABLES: ekko, zpo_rlsitem_g8.
 
-* Texts are maintained in Report Text Elements:
+* Texts are maintained in Report Text Elements: hieu
 * - Text Symbols: T01 (block title), I01/I02 (hints)
 * - Selection Texts: S_EBELN, S_BANFN, S_BEDAT, S_NETPR, S_LIFNR, S_MATNR, S_WERKS
 
