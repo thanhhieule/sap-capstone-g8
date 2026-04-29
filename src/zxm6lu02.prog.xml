@@ -3,18 +3,17 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <PROGDIR>
-    <NAME>ZALV_PO_FROM_PR_G8</NAME>
-    <DBAPL>S</DBAPL>
-    <SUBC>1</SUBC>
-    <FIXPT>X</FIXPT>
-    <LDBNAME>D$S</LDBNAME>
+    <NAME>ZXM6LU02</NAME>
+    <SUBC>I</SUBC>
+    <APPL>S</APPL>
+    <RLOAD>E</RLOAD>
     <UCCHECK>X</UCCHECK>
    </PROGDIR>
    <TPOOL>
     <item>
      <ID>R</ID>
-     <ENTRY>Display Purchase Orders created from Purchase Requisitions (G8)</ENTRY>
-     <LENGTH>63</LENGTH>
+     <ENTRY>Include ZXM6LU02</ENTRY>
+     <LENGTH>16</LENGTH>
     </item>
    </TPOOL>
   </asx:values>

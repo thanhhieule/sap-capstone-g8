@@ -61,6 +61,7 @@
      TYPES: END OF gts_parallel_input.
 
      TYPES: BEGIN OF gts_parallel_output,
+              PR_number   TYPE zi_rldhead_g8-PrNo,
               PO_number   TYPE zi_rldhead_g8-PoNo,
               Criticality TYPE zi_rldhead_g8-Criticality,
               message     TYPE zi_rldhead_g8-MessageStandardtable,
@@ -184,6 +185,7 @@
 
      "出力の返却
      rs_ouput = VALUE #(
+        PR_number   = is_input-prno
         PO_number   = ldf_pono
         criticality = ldf_criticality
         message     = ldf_message
@@ -238,50 +240,11 @@
      ls_poheaderx-pur_group  = 'X'.
      ls_poheaderx-currency   = 'X'.
 
-     SELECT SINGLE  PurchasingInfoRecord
-      FROM I_PurchasingInfoRecordTP
-      WHERE Supplier                = @is_input-lifnr
-        AND Material                = @ls_first_pr-Material
-      INTO @DATA(ls_info).
-
-     SELECT SINGLE  PurchasingInfoRecord,
-                    PurchasingInfoRecordCategory,
-                    PurchasingOrganization,
-                    Plant,
-                    ConditionRecord,
-                    ConditionValidityEndDate
-      FROM I_PurgInfoRecdCndnRecordTP
-      WHERE PurchasingInfoRecord    =  @ls_info
-      INTO @DATA(ls_key).
-
-     DATA lt_update TYPE TABLE FOR UPDATE I_PurgInfoRecdCndnRecordTP.
-
-     lt_update = VALUE #(
-     (
-         %key-PurchasingInfoRecord = ls_key-PurchasingInfoRecord
-         %key-PurchasingInfoRecordCategory = ls_key-PurchasingInfoRecordCategory
-         %key-PurchasingOrganization = ls_key-PurchasingOrganization
-         %key-Plant = ls_key-Plant
-         %key-ConditionRecord = ls_key-ConditionRecord
-         %key-ConditionValidityEndDate = ls_key-ConditionValidityEndDate
-         ConditionRateValue   = ls_first_pr-netpr
-         %control-ConditionRateValue = if_abap_behv=>mk-on
-     )
-     ).
-
-     MODIFY ENTITIES OF i_purchasinginforecordtp
-       ENTITY purginforecdcndnrecord
-       UPDATE FIELDS ( ConditionRateValue )
-       WITH lt_update
-       FAILED DATA(ls_failed)
-       REPORTED DATA(ls_reported)
-       MAPPED DATA(ls_mapped).
-
-     IF ls_failed IS INITIAL.
-       COMMIT ENTITIES.
-     ENDIF.
-
      LOOP AT is_input-item_data INTO DATA(ls_pr).
+
+     DATA(lv_updated_price) = zcl_com_conv=>amount_out(
+             if_amountin  = ls_pr-netpr
+             if_currency  = ls_pr-purreqnitemcurrency ).
 
 
        APPEND VALUE bapimepoitem(
@@ -293,7 +256,7 @@
          po_unit    = ls_pr-unit
          preq_no    = is_input-prno
          preq_item  = ls_pr-pritem
-         net_price  = ls_pr-netpr
+         net_price  = lv_updated_price
        ) TO lt_poitems.
 
        APPEND VALUE bapimepoitemx(

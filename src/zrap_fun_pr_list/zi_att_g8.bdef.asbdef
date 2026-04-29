@@ -45,6 +45,9 @@ with additional save
 
   action ( features : instance ) testRun result [1] $self;
 
+  validation validateSaveData1 on save { create; update; }
+
+
   // --- Mapping Header ---
   mapping for zpr_att_g8
   {
@@ -77,7 +80,11 @@ with additional save
   delete;
 
   // --- Read Only Fields ---
-  field ( readonly ) AttachmentUuid, ItemUuid, RecNumber;
+  field ( readonly : update ) AttachmentUuid, ItemUuid, RecNumber;
+
+  field ( features : instance )
+  PrNo, PrItem, Status,
+  MessageStandardtable;
 
   // --- Numbering ---
   field ( numbering : managed ) ItemUuid;
@@ -86,6 +93,8 @@ with additional save
   association _Header { with draft; }
 
   determination vldData on modify { field Unit, PurchaseRequisitionPrice, PurReqnItemCurrency, DeliveryDate, QuantityReq; create; update; }
+
+  validation validateSaveData2 on save { create; update; }
 
   // --- Mapping Item ---
 mapping for zpr_list_g8

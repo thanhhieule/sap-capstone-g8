@@ -1,7 +1,7 @@
  @Metadata.layer: #CORE
 @UI: {
   headerInfo: {
-    typeName: 'Puchase Requisition Header',
+    typeName: 'Puchase Requisition Release Detail',
     typeNamePlural: 'Puchase Requisition Headers',
     title: { type: #STANDARD, value: 'PrNo' }
   }
@@ -78,13 +78,13 @@ annotate entity ZC_RLSHEAD_G8 with
   
   @UI.lineItem:       [ { position: 70 } ]
   @UI.identification: [ { position: 70 } ]
-  @EndUserText.label: 'Cancel Reason Code'
+  @EndUserText.label: 'Cancel Reason'
   CancelReasonCode;
   
-  @UI.lineItem:       [ { position: 80 } ]
-  @UI.identification: [ { position: 80 } ]
-  @EndUserText.label: 'Cancel Note'
-  CancelNote;
+//  @UI.lineItem:       [ { position: 80 } ]
+//  @UI.identification: [ { position: 80 } ]
+//  @EndUserText.label: 'Cancel Note'
+//  CancelNote;
   
   @UI.lineItem:       [ { position: 90 } ]
   @UI.identification: [ { position: 90 } ]

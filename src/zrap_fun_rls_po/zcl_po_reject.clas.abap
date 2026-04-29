@@ -139,7 +139,7 @@ CLASS zcl_po_reject IMPLEMENTATION.
 *------------------------------------------------------------------
 * 1️⃣ Get Release Strategy from EKKO
 *------------------------------------------------------------------
-    SELECT SINGLE frggr, frgsx
+    SELECT SINGLE frggr, frgsx, frgzu
       FROM ekko
       INTO CORRESPONDING FIELDS OF @ls_ekko
       WHERE ebeln = @iv_ebeln.
@@ -151,101 +151,102 @@ CLASS zcl_po_reject IMPLEMENTATION.
       RETURN.
     ENDIF.
 
+    IF ls_ekko-frgzu <> 'X'.
+
+      IF lt_msg IS INITIAL.
+        APPEND |PO { iv_ebeln } rejected| TO lt_msg.
+      ENDIF.
+
+      SORT lt_msg.
+      DELETE ADJACENT DUPLICATES FROM lt_msg.
+
+
+      ef_success  = abap_true.
+      ef_severity = if_abap_behv_message=>severity-success.
+    ELSE.
 *------------------------------------------------------------------
 * 2️⃣ Get Release Codes from T16FS
 *------------------------------------------------------------------
-    SELECT SINGLE *
-      FROM t16fs
-      INTO @ls_t16fs
-      WHERE frggr = @ls_ekko-frggr
-        AND frgsx = @ls_ekko-frgsx.
+      SELECT SINGLE *
+        FROM t16fs
+        INTO @ls_t16fs
+        WHERE frggr = @ls_ekko-frggr
+          AND frgsx = @ls_ekko-frgsx.
 
 * Collect codes
-    IF ls_t16fs-frgc1 IS NOT INITIAL. APPEND ls_t16fs-frgc1 TO lt_codes. ENDIF.
-    IF ls_t16fs-frgc2 IS NOT INITIAL. APPEND ls_t16fs-frgc2 TO lt_codes. ENDIF.
-    IF ls_t16fs-frgc3 IS NOT INITIAL. APPEND ls_t16fs-frgc3 TO lt_codes. ENDIF.
-    IF ls_t16fs-frgc4 IS NOT INITIAL. APPEND ls_t16fs-frgc4 TO lt_codes. ENDIF.
-    IF ls_t16fs-frgc5 IS NOT INITIAL. APPEND ls_t16fs-frgc5 TO lt_codes. ENDIF.
-    IF ls_t16fs-frgc6 IS NOT INITIAL. APPEND ls_t16fs-frgc6 TO lt_codes. ENDIF.
-    IF ls_t16fs-frgc7 IS NOT INITIAL. APPEND ls_t16fs-frgc7 TO lt_codes. ENDIF.
-    IF ls_t16fs-frgc8 IS NOT INITIAL. APPEND ls_t16fs-frgc8 TO lt_codes. ENDIF.
+      IF ls_t16fs-frgc1 IS NOT INITIAL. APPEND ls_t16fs-frgc1 TO lt_codes. ENDIF.
+      IF ls_t16fs-frgc2 IS NOT INITIAL. APPEND ls_t16fs-frgc2 TO lt_codes. ENDIF.
+      IF ls_t16fs-frgc3 IS NOT INITIAL. APPEND ls_t16fs-frgc3 TO lt_codes. ENDIF.
+      IF ls_t16fs-frgc4 IS NOT INITIAL. APPEND ls_t16fs-frgc4 TO lt_codes. ENDIF.
+      IF ls_t16fs-frgc5 IS NOT INITIAL. APPEND ls_t16fs-frgc5 TO lt_codes. ENDIF.
+      IF ls_t16fs-frgc6 IS NOT INITIAL. APPEND ls_t16fs-frgc6 TO lt_codes. ENDIF.
+      IF ls_t16fs-frgc7 IS NOT INITIAL. APPEND ls_t16fs-frgc7 TO lt_codes. ENDIF.
+      IF ls_t16fs-frgc8 IS NOT INITIAL. APPEND ls_t16fs-frgc8 TO lt_codes. ENDIF.
 
 *------------------------------------------------------------------
 * ⭐ IMPORTANT — Reset từ level cao xuống thấp
 *------------------------------------------------------------------
-    SORT lt_codes DESCENDING.
+      SORT lt_codes DESCENDING.
 
 *------------------------------------------------------------------
 * 3️⃣ Reset Loop
 *------------------------------------------------------------------
-    LOOP AT lt_codes INTO lv_code.
+      LOOP AT lt_codes INTO lv_code.
 
-      CLEAR lt_return.
+        CLEAR lt_return.
 
-      CALL FUNCTION 'BAPI_PO_RELEASE'
-        EXPORTING
-          purchaseorder  = iv_ebeln
-          po_rel_code    = lv_code
-          use_exceptions = abap_true
-        TABLES
-          return         = lt_return.
-
-      CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
-        EXPORTING
-          wait = 'X'.
-
-      CALL FUNCTION 'BAPI_PO_RESET_RELEASE'
-        EXPORTING
-          purchaseorder = iv_ebeln
-          po_rel_code   = lv_code
-        TABLES
-          return        = lt_return.
+        CALL FUNCTION 'BAPI_PO_RESET_RELEASE'
+          EXPORTING
+            purchaseorder = iv_ebeln
+            po_rel_code   = lv_code
+          TABLES
+            return        = lt_return.
 
 * Analyze result
-      LOOP AT lt_return ASSIGNING FIELD-SYMBOL(<ls_ret>).
+        LOOP AT lt_return ASSIGNING FIELD-SYMBOL(<ls_ret>).
 
-        APPEND <ls_ret>-message TO lt_msg.
+          APPEND <ls_ret>-message TO lt_msg.
 
-        IF <ls_ret>-type = 'E'
-        OR <ls_ret>-type = 'A'.
-          lv_error = abap_true.
-        ENDIF.
+          IF <ls_ret>-type = 'E'
+          OR <ls_ret>-type = 'A'.
+            lv_error = abap_true.
+          ENDIF.
+
+        ENDLOOP.
 
       ENDLOOP.
-
-    ENDLOOP.
 
 *------------------------------------------------------------------
 * 4️⃣ Commit / Rollback
 *------------------------------------------------------------------
-    IF lv_error = abap_false.
+      IF lv_error = abap_false.
 
-      CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
-        EXPORTING
-          wait = 'X'.
+        CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+          EXPORTING
+            wait = 'X'.
 
-      ef_success  = abap_true.
-      ef_severity = if_abap_behv_message=>severity-success.
+        ef_success  = abap_true.
+        ef_severity = if_abap_behv_message=>severity-success.
 
-    ELSE.
+      ELSE.
 
-      CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+        CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
 
-      ef_success  = abap_false.
-      ef_severity = if_abap_behv_message=>severity-error.
+        ef_success  = abap_false.
+        ef_severity = if_abap_behv_message=>severity-error.
 
-    ENDIF.
+      ENDIF.
 
 *------------------------------------------------------------------
 * 5️⃣ Build message
 *------------------------------------------------------------------
-    IF lt_msg IS INITIAL.
-      APPEND |PO { iv_ebeln } rejected| TO lt_msg.
+      IF lt_msg IS INITIAL.
+        APPEND |PO { iv_ebeln } rejected| TO lt_msg.
+      ENDIF.
+
+      SORT lt_msg.
+      DELETE ADJACENT DUPLICATES FROM lt_msg.
     ENDIF.
-
-    SORT lt_msg.
-    DELETE ADJACENT DUPLICATES FROM lt_msg.
-
     ef_message =
       xco_cp=>strings( lt_msg )->join( | / | )->value.
 

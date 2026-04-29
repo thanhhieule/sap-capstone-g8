@@ -2,7 +2,7 @@
 define root abstract entity ZI_RLS_RejectPar {
   @EndUserText.label: 'Reject reason'
   @Consumption.valueHelpDefinition: [
-    { entity: { name: 'ZI_RLS_VH_RejectPar', element: 'CancelReasonCode' }, useForValidation: true }
+    { entity: { name: 'ZI_RLS_VH_RejectPar', element: 'CancelReasonCode' }}
   ]
-  CancelReasonCode : abap.char(2);
+  CancelReasonCode : abap.string(0);
 }

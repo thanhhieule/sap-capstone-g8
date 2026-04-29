@@ -39,11 +39,11 @@
                 THEN if_abap_behv=>fc-o-enabled
                 ELSE if_abap_behv=>fc-o-disabled )
 
-            %features-%action-unreleasePO = COND #(
-                WHEN ls_po-Status = 'PO Released'
-                  OR ls_po-Status = 'Not release'
-                THEN if_abap_behv=>fc-o-enabled
-                ELSE if_abap_behv=>fc-o-disabled )
+*            %features-%action-unreleasePO = COND #(
+*                WHEN ls_po-Status = 'PO Released'
+*                  OR ls_po-Status = 'Not release'
+*                THEN if_abap_behv=>fc-o-enabled
+*                ELSE if_abap_behv=>fc-o-disabled )
 
             %features-%action-Edit = if_abap_behv=>fc-o-disabled
           )
@@ -115,7 +115,6 @@
 
           ls_sendmail_input-iv_filename = ls_po-DefineKey.
           ls_sendmail_input-it_data     = lt_sendmail.
-          ls_sendmail_input-iv_receiver = 'datnb258@gmail.com'.
           ls_sendmail_input-iv_subject  = 'PO Released List'.
 
           DATA(lo_process_sendmail) = NEW zcl_pr_sendmail( ).
@@ -189,13 +188,6 @@ METHOD unreleasePO.
 
       DATA(ldv_reason) =
         keys[ KEY draft %tky = ls_po-%tky ]-%param-CancelReasonCode.
-
-      DATA ldv_note TYPE zpr_rejres_g8-cancel_reason_note.
-
-      SELECT SINGLE cancel_reason_note
-        FROM zpr_rejres_g8
-        WHERE cancel_reason_code = @ldv_reason
-        INTO @ldv_note.
     ENDIF.
 
 *------------------------------------------------------------------
@@ -210,21 +202,22 @@ METHOD unreleasePO.
                  Criticality
                  MessageStandardtable
                  CancelReasonCode
-                 CancelNote )
+*                 CancelNote
+                 )
         WITH VALUE #(
           (
             %tky        = ls_po-%tky
             Status      = lv_status_text
             Criticality = lv_criticality
-            CancelReasonCode = ldv_reason
-            CancelNote  = ldv_note
             MessageStandardtable = ls_output-message
+            CancelReasonCode = ldv_reason
+*            CancelNote  = ldv_note
           )
         ).
 
 * Mail list
       MOVE-CORRESPONDING ls_po TO lds_senmail.
-      lds_senmail-rejectreason = ldv_note.
+      lds_senmail-rejectreason = ldv_reason.
       APPEND lds_senmail TO ldt_senmail.
 
     ELSE.
@@ -234,12 +227,13 @@ METHOD unreleasePO.
         UPDATE
         FIELDS ( MessageStandardtable
                  CancelReasonCode
-                 CancelNote )
+*                 CancelNote
+                 )
         WITH VALUE #(
           (
             %tky        = ls_po-%tky
             CancelReasonCode = ldv_reason
-            CancelNote  = ldv_note
+*            CancelNote  = ldv_note
             MessageStandardtable = ls_output-message
           )
         ).
@@ -255,7 +249,6 @@ METHOD unreleasePO.
 
     lds_sendmail_input-iv_filename = ls_po-DefineKey.
     lds_sendmail_input-it_data     = ldt_senmail.
-    lds_sendmail_input-iv_receiver = 'datnb258@gmail.com'.
     lds_sendmail_input-iv_subject  = 'PO Rejected List'.
 
     DATA(lo_process_sendmail) = NEW zcl_pr_sendmail( ).

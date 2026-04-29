@@ -25,7 +25,10 @@ annotate entity  ZC_LIST_G8 with
   // ------------------------------------------------------
 
   @EndUserText.label: 'Record Number'
-  @UI.lineItem: [{ position: 10 }]
+  @UI: {
+    lineItem: [
+      { position: 10, importance: #HIGH }]
+  }
   RecNumber;
 
   @EndUserText.label: 'Status'

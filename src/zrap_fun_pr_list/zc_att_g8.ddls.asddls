@@ -10,7 +10,7 @@ key AttachmentUUID,
             mimeType: 'Mimetype',
             fileName: 'FileName',
             acceptableMimeTypes : ['text/csv'],
-            contentDispositionPreference: #ATTACHMENT
+            contentDispositionPreference: #INLINE
           }
       Attachment,
       @Semantics.mimeType: true

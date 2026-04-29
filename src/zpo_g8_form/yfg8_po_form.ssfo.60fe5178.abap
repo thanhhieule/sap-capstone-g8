@@ -1,0 +1,22 @@
+GS_ITEM-AMOUNT = GS_ITEM-MENGE * GS_ITEM-NETPR.
+
+IF GS_ITEM-WAERS = 'VND'.
+  GS_ITEM-AMOUNT = GS_ITEM-AMOUNT * 100.
+ENDIF.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

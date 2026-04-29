@@ -235,6 +235,8 @@ CLASS zcl_reject_pr IMPLEMENTATION.
         EXPORTING
           wait = 'X'.
 
+      WAIT UP TO '0.5' SECONDS.
+
       " BAPI呼び出し (RESET RELEASE)
       CALL FUNCTION 'BAPI_REQUISITION_RESET_REL_GEN'
         EXPORTING

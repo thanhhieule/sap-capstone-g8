@@ -77,7 +77,12 @@ annotate entity  ZC_ATT_G8 with
   @UI.lineItem: [ { position: 30 } ]
   @UI.selectionField: [{ position: 10 }]
   FileName;
-
+  
+  @EndUserText.label: 'File Name'
+  @UI.fieldGroup: [{ qualifier: 'HeaderGroup', position: 20 }]
+  @UI.hidden: true
+  EFileName;
+  
   @EndUserText.label: 'Created By'
   @UI.fieldGroup: [{ qualifier: 'HeaderGroup', position: 30 }]
   @UI.lineItem: [ { position: 80 } ]
@@ -98,10 +103,19 @@ annotate entity  ZC_ATT_G8 with
   @UI.facet: [{ exclude: true }]
   @UI.lineItem: [ { hidden: true } ]
   Attachment;
+  
+  @UI.fieldGroup: [{ qualifier: 'AttachmentGroup', position: 20 }]
+  @UI.facet: [{ exclude: true }]
+  @UI.lineItem: [ { hidden: true } ]
+  EAttachment;
 
   @EndUserText.label: 'MIME Type'
   @UI.lineItem: [ { position: 20, label: 'MIME Type' } ]
   Mimetype;
+
+  @EndUserText.label: 'MIME Type'
+  @UI.hidden: true
+  EMimetype;
 
   @EndUserText.label: 'Total Count'
   @UI.fieldGroup: [{ qualifier: 'ResultGroup', position: 10 }]

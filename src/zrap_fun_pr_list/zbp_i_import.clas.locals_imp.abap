@@ -25,6 +25,8 @@ CLASS lhc_item DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS vldData FOR DETERMINE ON MODIFY
       IMPORTING keys FOR item~vldData.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR Item RESULT result.
 
 ENDCLASS.
 
@@ -50,9 +52,9 @@ CLASS lhc_item IMPLEMENTATION.
       LINK DATA(lt_header_link).
 
     LOOP AT lt_item INTO DATA(ls_item).
-        APPEND VALUE #( %tky        = ls_item-%tky
-                    %state_area = 'VALIDATE_DATA' )
-                  TO reported-item.
+      APPEND VALUE #( %tky        = ls_item-%tky
+                  %state_area = 'VALIDATE_DATA' )
+                TO reported-item.
 
 *--------------------------------------------------
 * Quantity > 0
@@ -181,9 +183,25 @@ CLASS lhc_item IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+  METHOD get_instance_features.
+    READ ENTITIES OF zi_att_g8 IN LOCAL MODE
+  ENTITY item
+     ALL FIELDS
+    WITH CORRESPONDING #( keys )
+  RESULT DATA(ldt_file).
+
+    result = VALUE #(
+      FOR lds_file IN ldt_file
+        ( %tky = lds_file-%tky
+
+          %features-%field-PrNo = if_abap_behv=>fc-f-read_only
+          %features-%field-PrItem = if_abap_behv=>fc-f-read_only
+          %features-%field-MessageStandardtable = if_abap_behv=>fc-f-read_only
+          %features-%field-Status = if_abap_behv=>fc-f-read_only
+    ) ).
+  ENDMETHOD.
+
 ENDCLASS.
-
-
 
 CLASS lhc_header DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PUBLIC SECTION.
@@ -226,8 +244,15 @@ CLASS lhc_header DEFINITION INHERITING FROM cl_abap_behavior_handler.
     "保存前の検証
     METHODS vldbeforesave FOR VALIDATE ON SAVE
       IMPORTING keys FOR header~vldbeforesave.
+
     METHODS testrun FOR MODIFY
       IMPORTING keys FOR ACTION header~testrun RESULT result.
+    METHODS validatesavedata1 FOR VALIDATE ON SAVE
+      IMPORTING keys FOR header~validatesavedata1.
+
+    METHODS downloaderror
+      IMPORTING it_error_data TYPE zcl_pr_sendmail=>gtt_filedata
+                if_uuid       TYPE zi_att_g8-AttachmentUUID.
 
 ENDCLASS.
 
@@ -411,6 +436,8 @@ CLASS lhc_header IMPLEMENTATION.
     DATA: ldt_senmail        TYPE zcl_pr_sendmail=>gtt_filedata,
           lds_senmail        TYPE zcl_pr_sendmail=>gts_filedata,
           lds_sendmail_input TYPE zcl_pr_sendmail=>gts_parallel_input.
+    DATA: ldt_error_data TYPE zcl_pr_sendmail=>gtt_filedata,
+          lds_error_data TYPE zcl_pr_sendmail=>gts_filedata.
 
     CLEAR: gdf_count_total, gdf_count_success, gdf_count_error, gdf_count_warning.
 
@@ -425,7 +452,7 @@ CLASS lhc_header IMPLEMENTATION.
 
     "データ入力パラメータを移動
     LOOP AT ldt_file_item INTO DATA(lds_file_item)
-     GROUP BY ( productionorder = lds_file_item-PrNo )
+     GROUP BY ( PrNo = lds_file_item-PrNo )
      ASSIGNING FIELD-SYMBOL(<lds_group>).
 
       APPEND INITIAL LINE TO ldt_parallel_input ASSIGNING FIELD-SYMBOL(<lds_data>).
@@ -442,6 +469,8 @@ CLASS lhc_header IMPLEMENTATION.
 
     "実行して結果を取得
     SORT ldt_file_item BY attachmentuuid itemuuid.
+
+    DATA(ldf_line) = 1.
 
     LOOP AT ldt_parallel_input INTO DATA(lds_parallel_input).
       DATA(lds_output) = lo_process_parallel->execute_parallel( lds_parallel_input ).
@@ -468,6 +497,17 @@ CLASS lhc_header IMPLEMENTATION.
           APPEND lds_senmail TO ldt_senmail.
         ENDIF.
 
+        IF lds_file_item_upd-criticality = gcf_criticality_error.
+          " Lấy dữ liệu item nguyên bản để có đủ các thông tin (Material, Quantity, Unit...)
+          MOVE-CORRESPONDING lds_file_item TO lds_error_data.
+
+          " Cập nhật thêm các trường có thể đã bị thay đổi trong quá trình xử lý nếu cần
+          lds_error_data-PrNo   = ldf_line.
+
+          APPEND lds_error_data TO ldt_error_data.
+          CLEAR lds_error_data.
+        ENDIF.
+
         "各レコードのステータスを集計する
         gdf_count_total += 1.
 
@@ -480,6 +520,8 @@ CLASS lhc_header IMPLEMENTATION.
             gdf_count_warning += 1.
         ENDCASE.
       ENDLOOP.
+
+      ldf_line += 1.
     ENDLOOP.
 
     LOOP AT ldt_data_for_item_upd ASSIGNING FIELD-SYMBOL(<lfs_item_url>).
@@ -614,23 +656,26 @@ CLASS lhc_header IMPLEMENTATION.
 
       ENDLOOP.
 
-      IF ldt_failed_create IS INITIAL.
-        LOOP AT ldt_senmail ASSIGNING FIELD-SYMBOL(<lds_sendmail>).
-          <lds_sendmail>-purchaserequisitionprice =
-           zcl_com_conv=>amount_out(
-             if_amountin  = <lds_sendmail>-purchaserequisitionprice
-             if_currency  = <lds_sendmail>-PurReqnItemCurrency ).
-        ENDLOOP.
+      LOOP AT ldt_senmail ASSIGNING FIELD-SYMBOL(<lds_sendmail>).
+        <lds_sendmail>-purchaserequisitionprice =
+         zcl_com_conv=>amount_out(
+           if_amountin  = <lds_sendmail>-purchaserequisitionprice
+           if_currency  = <lds_sendmail>-PurReqnItemCurrency ).
+      ENDLOOP.
 
-        lds_sendmail_input-iv_filename = ldt_file_item[ 1 ]-attachmentuuid.
-        lds_sendmail_input-it_data = ldt_senmail.
-        lds_sendmail_input-iv_receiver = 'datnb258@gmail.com'.
-        lds_sendmail_input-iv_subject = 'PR List'.
-        DATA(lo_process_sendmail) = NEW zcl_pr_sendmail( ).
-        lo_process_sendmail->execute_parallel( lds_sendmail_input ).
-      ENDIF.
+      lds_sendmail_input-iv_filename = ldt_file_item[ 1 ]-attachmentuuid.
+      lds_sendmail_input-it_data = ldt_senmail.
+      lds_sendmail_input-iv_subject = 'PR List'.
+      DATA(lo_process_sendmail) = NEW zcl_pr_sendmail( ).
+      lo_process_sendmail->execute_parallel( lds_sendmail_input ).
     ENDIF.
 
+    IF ldt_error_data IS NOT INITIAL.
+      downloaderror(
+        it_error_data = ldt_error_data
+        if_uuid       = keys[ 1 ]-AttachmentUUID
+      ).
+    ENDIF.
     reported = CORRESPONDING #( DEEP lds_update_header_reported ).
 
   ENDMETHOD.
@@ -685,6 +730,148 @@ CLASS lhc_header IMPLEMENTATION.
 
 
   METHOD testRun.
+
+  ENDMETHOD.
+
+  METHOD downloaderror.
+
+    IF it_error_data IS INITIAL. RETURN. ENDIF.
+
+    " 1. TẠO HEADER CHO FILE CSV GIỐNG VỚI FORMAT UPLOAD
+    DATA: lv_csv_string TYPE string.
+    lv_csv_string =
+    |PrNo,PrItem,PurchasingRequisitionType,PurReqnDescription,PurReqnDescription Item,Material,MaterialGroup,QuantityReq,Unit,PurchasingRequisitionPrice,Currency,Plant,PurchasingGroup,PurchasingOrganization,AccountAssignmentCategory,DeliveryDate| &&
+                    cl_abap_char_utilities=>cr_lf.
+
+    " 2. LOOP QUA BẢNG DỮ LIỆU LỖI VÀ ĐƯA VÀO CHUỖI
+    LOOP AT it_error_data INTO DATA(ls_item).
+
+      " --- Xử lý Format Số lượng (QuantityReq) ---
+      DATA: lv_quan_export TYPE c LENGTH 30.
+      WRITE ls_item-QuantityReq TO lv_quan_export UNIT ls_item-Unit NO-GROUPING LEFT-JUSTIFIED.
+      CONDENSE lv_quan_export NO-GAPS.
+
+      " --- Xử lý Format Tiền tệ (PurchasingRequisitionPrice) ---
+      DATA: lv_price_export TYPE c LENGTH 30.
+      WRITE ls_item-PurchaseRequisitionPrice TO lv_price_export CURRENCY ls_item-PurReqnItemCurrency NO-GROUPING LEFT-JUSTIFIED.
+      CONDENSE lv_price_export NO-GAPS.
+
+      " >>> THÊM MỚI: XỬ LÝ CẮT BỎ KHOẢNG TRẮNG (TRIM) CÁC TRƯỜNG TEXT <<<
+      " Ép kiểu về string và dùng CONDENSE để xóa khoảng trắng thừa ở 2 đầu
+      DATA(lv_pr_type) = CONV string( ls_item-PurchaseRequisitionType ). CONDENSE lv_pr_type.
+      DATA(lv_mat_grp) = CONV string( ls_item-MaterialGroup ).           CONDENSE lv_mat_grp.
+      DATA(lv_unit)    = CONV string( ls_item-Unit ).                    CONDENSE lv_unit.
+      DATA(lv_curr)    = CONV string( ls_item-PurReqnItemCurrency ).     CONDENSE lv_curr.
+      DATA(lv_plant)   = CONV string( ls_item-Plant ).                   CONDENSE lv_plant.
+      DATA(lv_pur_grp) = CONV string( ls_item-PurchasingGroup ).         CONDENSE lv_pur_grp.
+      DATA(lv_pur_org) = CONV string( ls_item-PurchasingOrganization ).  CONDENSE lv_pur_org.
+      DATA(lv_acc_cat) = CONV string( ls_item-AccountAssignmentCategory ). CONDENSE lv_acc_cat.
+
+      " --- Xử lý khoảng trắng và an toàn dấu ngoặc kép cho Description & Text ---
+      DATA(lv_desc) = CONV string( ls_item-PurReqnDescription ).
+      CONDENSE lv_desc. " Xóa khoảng trắng 2 đầu
+      REPLACE ALL OCCURRENCES OF `"` IN lv_desc WITH `""`.
+
+      DATA(lv_text) = CONV string( ls_item-PurchaseRequisitionItemText ).
+      CONDENSE lv_text. " Xóa khoảng trắng 2 đầu
+      REPLACE ALL OCCURRENCES OF `"` IN lv_text WITH `""`.
+
+      " --- Xử lý PR No & Material (Vừa Condense vừa Alpha Out loại bỏ số 0 ở đầu) ---
+      DATA(lv_pr_no) = |{ ls_item-PrNo ALPHA = OUT }|.
+      CONDENSE lv_pr_no.
+
+      DATA(lv_mat) = |{ ls_item-Material ALPHA = OUT }|.
+      CONDENSE lv_mat.
+
+      " --- Xử lý PR Item (Nếu rỗng hoặc 00000 thì để trắng) ---
+      DATA(lv_pr_item) = COND string( WHEN ls_item-PrItem = '00000' OR ls_item-PrItem IS INITIAL
+                                      THEN '' ELSE |{ ls_item-PrItem ALPHA = OUT }| ).
+      CONDENSE lv_pr_item.
+
+      " --- Ghép chuỗi CSV theo đúng thứ tự file Upload ---
+      lv_csv_string = lv_csv_string &&
+                      |{ lv_pr_no },| &&
+                      |{ lv_pr_item },| &&
+                      |{ lv_pr_type },| &&
+                      |"{ lv_desc }",| &&
+                      |"{ lv_text }",| &&
+                      |{ lv_mat },| &&
+                      |{ lv_mat_grp },| &&
+                      |{ lv_quan_export },| &&
+                      |{ lv_unit },| &&
+                      |{ lv_price_export },| &&
+                      |{ lv_curr },| &&
+                      |{ lv_plant },| &&
+                      |{ lv_pur_grp },| &&
+                      |{ lv_pur_org },| &&
+                      |{ lv_acc_cat },| &&
+                      |{ ls_item-DeliveryDate }| &&
+                      cl_abap_char_utilities=>cr_lf.
+    ENDLOOP.
+
+    " 3. CHUYỂN STRING THÀNH XSTRING VÀ GẮN BOM UTF-8
+    DATA(lv_xstring_content) = xco_cp=>string( lv_csv_string )->as_xstring( xco_cp_character=>code_page->utf_8 )->value.
+    DATA(lv_bom)             = cl_abap_char_utilities=>byte_order_mark_utf8.
+    DATA(lv_xstring_file)    = lv_bom && lv_xstring_content.
+
+    " 4. UPDATE ENTITY ĐỂ GHI FILE TRẢ VỀ CHO USER
+    MODIFY ENTITIES OF zi_att_g8 IN LOCAL MODE
+      ENTITY Header
+      UPDATE FIELDS ( Attachment FileName Mimetype )
+      WITH VALUE #( ( %key-AttachmentUUID = if_uuid
+                      Attachment = lv_xstring_file
+                      FileName   = 'Error_List_Export.csv'
+                      Mimetype    = 'text/csv'  ) )
+      FAILED DATA(failed)
+      REPORTED DATA(reported).
+
+  ENDMETHOD.
+
+METHOD validateSaveData1.
+
+    " 1. Đọc dữ liệu Item thông qua Association từ Header
+    READ ENTITIES OF zi_att_g8 IN LOCAL MODE
+      ENTITY header BY \_item
+      FIELDS ( criticality )
+      WITH CORRESPONDING #( keys )
+      RESULT DATA(ldt_items)
+      LINK DATA(ldt_links). " Dùng LINK để map chính xác Item với Header
+
+    " 2. Duyệt qua từng Header (Best practice thay vì dùng keys[ 1 ])
+    LOOP AT keys INTO DATA(ls_key).
+
+      " Reset state area
+      APPEND VALUE #( %tky        = ls_key-%tky
+                      %state_area = 'VALIDATE_DATA' )
+            TO reported-header.
+
+      DATA(lv_has_error) = abap_false.
+
+      " 3. Tìm các Item thuộc về Header hiện tại và kiểm tra Criticality
+      LOOP AT ldt_links INTO DATA(ls_link) WHERE source-%tky = ls_key-%tky.
+
+        " Lấy data chi tiết của Item tương ứng
+        READ TABLE ldt_items INTO DATA(ls_item) WITH KEY %tky = ls_link-target-%tky.
+
+        IF sy-subrc = 0 AND ls_item-criticality = 1. " 1 là Error (gcf_criticality_error)
+          lv_has_error = abap_true.
+          EXIT. " Đã thấy 1 dòng lỗi thì thoát vòng lặp ngay cho tối ưu
+        ENDIF.
+
+      ENDLOOP.
+
+      " 4. Nếu có ít nhất 1 Item bị lỗi, mới xuất Message
+      IF lv_has_error = abap_true.
+        APPEND VALUE #(
+          %tky        = ls_key-%tky
+          %state_area = 'VALIDATE_DATA'
+          %msg        = new_message_with_text(
+                          severity = if_abap_behv_message=>severity-warning
+                          text     = 'Please check generated error file in Attachment!' )
+        ) TO reported-header.
+      ENDIF.
+
+    ENDLOOP.
 
   ENDMETHOD.
 

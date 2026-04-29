@@ -1,7 +1,7 @@
  @Metadata.layer: #CORE
 @UI: {
   headerInfo: {
-    typeName: 'Puchase Requisition Header',
+    typeName: 'Convert PR to PO Detail',
     typeNamePlural: 'Puchase Requisition Headers',
     title: { type: #STANDARD, value: 'PrNo' }
   }

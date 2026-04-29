@@ -15,61 +15,62 @@ CLASS  zcl_pr_import DEFINITION
       gcf_warning             TYPE zi_list_g8-status VALUE 'Warning',
       gcf_error               TYPE zi_list_g8-status VALUE 'Error'.
 
-TYPES: BEGIN OF gts_filedata,
-         prno                        TYPE zi_list_g8-PrNo,
-         pritem                      TYPE zi_list_g8-PrItem,
-         purchaserequisitiontype     TYPE zi_list_g8-PurchaseRequisitionType,
-         purreqndescription          TYPE zi_list_g8-PurReqnDescription,
-         purchaserequisitionitemtext TYPE zi_list_g8-PurchaseRequisitionItemText,
-         material                    TYPE zi_list_g8-Material,
-         materialgroup               TYPE zi_list_g8-MaterialGroup,
-         quantityreq                 TYPE zi_list_g8-QuantityReq,
-         unit                        TYPE zi_list_g8-Unit,
-         purchaserequisitionprice    TYPE zi_list_g8-PurchaseRequisitionPrice,
-         PurReqnItemCurrency         TYPE zi_list_g8-PurReqnItemCurrency,
-         plant                       TYPE zi_list_g8-Plant,
-         purchasinggroup             TYPE zi_list_g8-PurchasingGroup,
-         purchasingorganization      TYPE zi_list_g8-PurchasingOrganization,
-         accountassignmentcategory   TYPE zi_list_g8-AccountAssignmentCategory,
-         deliverydate                TYPE zi_list_g8-DeliveryDate,
-       END OF gts_filedata.
+    TYPES: BEGIN OF gts_filedata,
+             prno                        TYPE zi_list_g8-PrNo,
+             pritem                      TYPE zi_list_g8-PrItem,
+             purchaserequisitiontype     TYPE zi_list_g8-PurchaseRequisitionType,
+             purreqndescription          TYPE zi_list_g8-PurReqnDescription,
+             purchaserequisitionitemtext TYPE zi_list_g8-PurchaseRequisitionItemText,
+             material                    TYPE zi_list_g8-Material,
+             materialgroup               TYPE zi_list_g8-MaterialGroup,
+             quantityreq                 TYPE zi_list_g8-QuantityReq,
+             unit                        TYPE zi_list_g8-Unit,
+             purchaserequisitionprice    TYPE zi_list_g8-PurchaseRequisitionPrice,
+             PurReqnItemCurrency         TYPE zi_list_g8-PurReqnItemCurrency,
+             plant                       TYPE zi_list_g8-Plant,
+             purchasinggroup             TYPE zi_list_g8-PurchasingGroup,
+             purchasingorganization      TYPE zi_list_g8-PurchasingOrganization,
+             accountassignmentcategory   TYPE zi_list_g8-AccountAssignmentCategory,
+             deliverydate                TYPE zi_list_g8-DeliveryDate,
+           END OF gts_filedata.
 
     TYPES gtt_filedata TYPE STANDARD TABLE OF gts_filedata WITH EMPTY KEY.
-TYPES: BEGIN OF gts_item_data,
-         recnumber                     TYPE zi_list_g8-RecNumber,
-         itemuuid                      TYPE zi_list_g8-ItemUuid,
+    TYPES: BEGIN OF gts_item_data,
+             recnumber                   TYPE zi_list_g8-RecNumber,
+             itemuuid                    TYPE zi_list_g8-ItemUuid,
 
-         pritem                        TYPE zi_list_g8-PrItem,
-         purchaserequisitionitemtext   TYPE zi_list_g8-PurchaseRequisitionItemText,
-         material                      TYPE zi_list_g8-Material,
-         materialgroup                 TYPE zi_list_g8-MaterialGroup,
+             prno                        TYPE zi_list_g8-PrNo,
+             pritem                      TYPE zi_list_g8-PrItem,
+             purchaserequisitionitemtext TYPE zi_list_g8-PurchaseRequisitionItemText,
+             material                    TYPE zi_list_g8-Material,
+             materialgroup               TYPE zi_list_g8-MaterialGroup,
 
-         QuantityReq                   TYPE zi_list_g8-QuantityReq,
-         unit                          TYPE zi_list_g8-Unit,
+             QuantityReq                 TYPE zi_list_g8-QuantityReq,
+             unit                        TYPE zi_list_g8-Unit,
 
-         purchaserequisitionprice      TYPE zi_list_g8-PurchaseRequisitionPrice,
-         PurReqnItemCurrency           TYPE zi_list_g8-PurReqnItemCurrency,
+             purchaserequisitionprice    TYPE zi_list_g8-PurchaseRequisitionPrice,
+             PurReqnItemCurrency         TYPE zi_list_g8-PurReqnItemCurrency,
 
-         plant                         TYPE zi_list_g8-Plant,
-         purchasinggroup               TYPE zi_list_g8-PurchasingGroup,
-         purchasingorganization        TYPE zi_list_g8-PurchasingOrganization,
+             plant                       TYPE zi_list_g8-Plant,
+             purchasinggroup             TYPE zi_list_g8-PurchasingGroup,
+             purchasingorganization      TYPE zi_list_g8-PurchasingOrganization,
 
-         accountassignmentcategory     TYPE zi_list_g8-AccountAssignmentCategory,
-         deliverydate                  TYPE zi_list_g8-DeliveryDate,
-       END OF gts_item_data.
+             accountassignmentcategory   TYPE zi_list_g8-AccountAssignmentCategory,
+             deliverydate                TYPE zi_list_g8-DeliveryDate,
+           END OF gts_item_data.
 
     TYPES gtt_item_data TYPE STANDARD TABLE OF gts_item_data WITH EMPTY KEY.
 
     TYPES: BEGIN OF gts_group_data,
-         attachmentuuid                TYPE zi_list_g8-AttachmentUuid,
-         pr_no                         TYPE zi_list_g8-PrNo,
+             attachmentuuid          TYPE zi_list_g8-AttachmentUuid,
+             pr_no                   TYPE zi_list_g8-PrNo,
 
-         purchaserequisitiontype       TYPE zi_list_g8-PurchaseRequisitionType,
-         purreqndescription            TYPE zi_list_g8-PurReqnDescription,
+             purchaserequisitiontype TYPE zi_list_g8-PurchaseRequisitionType,
+             purreqndescription      TYPE zi_list_g8-PurReqnDescription,
 
-         " Item list
-         item_data                     TYPE gtt_item_data,
-       END OF gts_group_data.
+             " Item list
+             item_data               TYPE gtt_item_data,
+           END OF gts_group_data.
     TYPES gtt_group_data TYPE STANDARD TABLE OF gts_group_data WITH EMPTY KEY.
 
     TYPES: BEGIN OF gts_job_log_message,
@@ -115,56 +116,56 @@ ENDCLASS.
 
 CLASS zcl_pr_import IMPLEMENTATION.
 
-METHOD convert_data_file.
+  METHOD convert_data_file.
 
-  "--------------------------------------------------
-  " Basic mapping
-  "--------------------------------------------------
-  rs_import_detail-prno            = is_file_data-prno.
-  rs_import_detail-pritem          = is_file_data-pritem.
-  rs_import_detail-material        = is_file_data-material.
-  rs_import_detail-quantityreq     = is_file_data-quantityreq.
-  rs_import_detail-unit            = is_file_data-unit.
-  rs_import_detail-deliverydate    = is_file_data-deliverydate.
-  rs_import_detail-plant           = is_file_data-plant.
-  rs_import_detail-purchasinggroup = is_file_data-purchasinggroup.
+    "--------------------------------------------------
+    " Basic mapping
+    "--------------------------------------------------
+    rs_import_detail-prno            = is_file_data-prno.
+    rs_import_detail-pritem          = is_file_data-pritem.
+    rs_import_detail-material        = is_file_data-material.
+    rs_import_detail-quantityreq     = is_file_data-quantityreq.
+    rs_import_detail-unit            = is_file_data-unit.
+    rs_import_detail-deliverydate    = is_file_data-deliverydate.
+    rs_import_detail-plant           = is_file_data-plant.
+    rs_import_detail-purchasinggroup = is_file_data-purchasinggroup.
 
-  rs_import_detail-purchaserequisitiontype     = is_file_data-purchaserequisitiontype.
-  rs_import_detail-purreqndescription          = is_file_data-purreqndescription.
-  rs_import_detail-purchaserequisitionitemtext = is_file_data-purchaserequisitionitemtext.
-  rs_import_detail-materialgroup               = is_file_data-materialgroup.
-  rs_import_detail-purchaserequisitionprice    = is_file_data-purchaserequisitionprice.
-  rs_import_detail-PurReqnItemCurrency         = is_file_data-PurReqnItemCurrency.
-  rs_import_detail-purchasingorganization      = is_file_data-purchasingorganization.
-  rs_import_detail-accountassignmentcategory   = is_file_data-accountassignmentcategory.
+    rs_import_detail-purchaserequisitiontype     = is_file_data-purchaserequisitiontype.
+    rs_import_detail-purreqndescription          = is_file_data-purreqndescription.
+    rs_import_detail-purchaserequisitionitemtext = is_file_data-purchaserequisitionitemtext.
+    rs_import_detail-materialgroup               = is_file_data-materialgroup.
+    rs_import_detail-purchaserequisitionprice    = is_file_data-purchaserequisitionprice.
+    rs_import_detail-PurReqnItemCurrency         = is_file_data-PurReqnItemCurrency.
+    rs_import_detail-purchasingorganization      = is_file_data-purchasingorganization.
+    rs_import_detail-accountassignmentcategory   = is_file_data-accountassignmentcategory.
 
-  "--------------------------------------------------
-  " Normalize PR number & item
-  "--------------------------------------------------
-  CONDENSE:
-    rs_import_detail-prno   NO-GAPS,
-    rs_import_detail-pritem NO-GAPS.
+    "--------------------------------------------------
+    " Normalize PR number & item
+    "--------------------------------------------------
+    CONDENSE:
+      rs_import_detail-prno   NO-GAPS,
+      rs_import_detail-pritem NO-GAPS.
 
-  rs_import_detail-prno   = |{ rs_import_detail-prno   ALPHA = IN }|.
-  rs_import_detail-pritem = |{ rs_import_detail-pritem ALPHA = IN }|.
+    rs_import_detail-prno   = |{ rs_import_detail-prno   ALPHA = IN }|.
+    rs_import_detail-pritem = |{ rs_import_detail-pritem ALPHA = IN }|.
 
-  "--------------------------------------------------
-  " Conversion exits
-  "--------------------------------------------------
-  rs_import_detail-material =
-    zcl_com_conv=>conv_matn1_in(
-      if_input = is_file_data-material ).
+    "--------------------------------------------------
+    " Conversion exits
+    "--------------------------------------------------
+    rs_import_detail-material =
+      zcl_com_conv=>conv_matn1_in(
+        if_input = is_file_data-material ).
 
     rs_import_detail-purchaserequisitionprice =
     zcl_com_conv=>amount_in(
       if_amountout = is_file_data-purchaserequisitionprice
       if_currency  = is_file_data-PurReqnItemCurrency ).
 
-  rs_import_detail-unit =
-    zcl_com_conv=>conv_cunit_in(
-      if_input = is_file_data-unit ).
+    rs_import_detail-unit =
+      zcl_com_conv=>conv_cunit_in(
+        if_input = is_file_data-unit ).
 
-ENDMETHOD.
+  ENDMETHOD.
 
 
   METHOD execute_parallel.
@@ -244,39 +245,39 @@ ENDMETHOD.
     CHECK lds_file_item IS NOT INITIAL.
 
 
-      "スケール更新データなし→BOインターフェースで更新
-      me->create_pr(
-        EXPORTING
-          is_file_item_proc = lds_file_item
-        IMPORTING
-          ef_prno           = ldf_prno
-          ef_success        = ldf_boif_success
-          ef_message        = ldf_message
-          ef_severity       = ldf_boif_severity
-      ).
+    "スケール更新データなし→BOインターフェースで更新
+    me->create_pr(
+      EXPORTING
+        is_file_item_proc = lds_file_item
+      IMPORTING
+        ef_prno           = ldf_prno
+        ef_success        = ldf_boif_success
+        ef_message        = ldf_message
+        ef_severity       = ldf_boif_severity
+    ).
 
-      IF ldf_boif_success <> abap_true
-      OR ldf_boif_severity = if_abap_behv_message=>severity-error.
-        ldf_status      = gcf_error.
-        ldf_criticality = gcf_criticality_error.
-      ELSEIF ldf_boif_severity = if_abap_behv_message=>severity-warning.
-        ldf_status      = gcf_warning.
-        ldf_criticality = gcf_criticality_warning.
-      ELSE.
-        ldf_status      = gcf_normal.
-        ldf_criticality = gcf_criticality_success.
-      ENDIF.
+    IF ldf_boif_success <> abap_true
+    OR ldf_boif_severity = if_abap_behv_message=>severity-error.
+      ldf_status      = gcf_error.
+      ldf_criticality = gcf_criticality_error.
+    ELSEIF ldf_boif_severity = if_abap_behv_message=>severity-warning.
+      ldf_status      = gcf_warning.
+      ldf_criticality = gcf_criticality_warning.
+    ELSE.
+      ldf_status      = gcf_normal.
+      ldf_criticality = gcf_criticality_success.
+    ENDIF.
 
     DATA: lv_item_increment TYPE n LENGTH 5.
     LOOP AT lds_file_item-item_data INTO DATA(lds_item).
       MOVE-CORRESPONDING lds_file_item TO lds_file_item_proc.
       MOVE-CORRESPONDING lds_item TO lds_file_item_proc.
       lds_file_item_proc-status               = ldf_status.
-      if ldf_status = gcf_normal.
+      IF ldf_status <> gcf_error.
         lv_item_increment = lv_item_increment + 10.
         lds_file_item_proc-pritem = lv_item_increment.
         lds_file_item_proc-prno = ldf_prno.
-      endif.
+      ENDIF.
       lds_file_item_proc-messagestandardtable = ldf_message.
       lds_file_item_proc-criticality          = ldf_criticality.
       APPEND lds_file_item_proc TO ldt_file_item_proc.
@@ -306,80 +307,80 @@ ENDMETHOD.
       ldt_messages  TYPE TABLE OF string.
 
 * 製造指図作成
-MODIFY ENTITIES OF i_purchaserequisitiontp
-  ENTITY PurchaseRequisition
-    CREATE
-    FIELDS (
-      PurchaseRequisitionType
-      PurReqnDescription
-    )
-    WITH VALUE #(
-      (
-        %cid                      = ldf_cid
-        PurchaseRequisitionType   = is_file_item_proc-purchaserequisitiontype
-        PurReqnDescription        = is_file_item_proc-purreqndescription
-      )
-    )
-
-  CREATE BY \_purchaserequisitionitem
-    FIELDS (
-      PurchaseRequisitionItemText
-      Material
-      MaterialGroup
-      RequestedQuantity
-      BaseUnit
-      PurchaseRequisitionPrice
-      PurReqnItemCurrency
-      Plant
-      PurchasingGroup
-      PurchasingOrganization
-      AccountAssignmentCategory
-      DeliveryDate
-      RequisitionerName
-    )
-    AUTO FILL CID WITH VALUE #(
-      (
-        %cid_ref = ldf_cid
-        %target  = VALUE #(
-          FOR ls_item IN is_file_item_proc-item_data
+    MODIFY ENTITIES OF i_purchaserequisitiontp
+      ENTITY PurchaseRequisition
+        CREATE
+        FIELDS (
+          PurchaseRequisitionType
+          PurReqnDescription
+        )
+        WITH VALUE #(
           (
-            %data-PurchaseRequisitionItemText = ls_item-purchaserequisitionitemtext
-            %data-Material                    = ls_item-material
-            %data-MaterialGroup               = ls_item-materialgroup
-            %data-RequestedQuantity           = ls_item-quantityreq
-            %data-BaseUnit                    = ls_item-unit
-            %data-PurchaseRequisitionPrice    = ls_item-purchaserequisitionprice
-            %data-PurReqnItemCurrency         = ls_item-purreqnitemcurrency
-            %data-Plant                       = ls_item-plant
-            %data-PurchasingGroup             = ls_item-purchasinggroup
-            %data-PurchasingOrganization      = ls_item-purchasingorganization
-            %data-AccountAssignmentCategory   = ls_item-accountassignmentcategory
-            %data-DeliveryDate                = ls_item-deliverydate
-            %data-RequisitionerName           = sy-uname
+            %cid                      = ldf_cid
+            PurchaseRequisitionType   = is_file_item_proc-purchaserequisitiontype
+            PurReqnDescription        = is_file_item_proc-purreqndescription
           )
         )
-      )
-    )
 
-  FAILED   DATA(failed_create)
-  REPORTED DATA(reported_create).
+      CREATE BY \_purchaserequisitionitem
+        FIELDS (
+          PurchaseRequisitionItemText
+          Material
+          MaterialGroup
+          RequestedQuantity
+          BaseUnit
+          PurchaseRequisitionPrice
+          PurReqnItemCurrency
+          Plant
+          PurchasingGroup
+          PurchasingOrganization
+          AccountAssignmentCategory
+          DeliveryDate
+          RequisitionerName
+        )
+        AUTO FILL CID WITH VALUE #(
+          (
+            %cid_ref = ldf_cid
+            %target  = VALUE #(
+              FOR ls_item IN is_file_item_proc-item_data
+              (
+                %data-PurchaseRequisitionItemText = ls_item-purchaserequisitionitemtext
+                %data-Material                    = ls_item-material
+                %data-MaterialGroup               = ls_item-materialgroup
+                %data-RequestedQuantity           = ls_item-quantityreq
+                %data-BaseUnit                    = ls_item-unit
+                %data-PurchaseRequisitionPrice    = ls_item-purchaserequisitionprice
+                %data-PurReqnItemCurrency         = ls_item-purreqnitemcurrency
+                %data-Plant                       = ls_item-plant
+                %data-PurchasingGroup             = ls_item-purchasinggroup
+                %data-PurchasingOrganization      = ls_item-purchasingorganization
+                %data-AccountAssignmentCategory   = ls_item-accountassignmentcategory
+                %data-DeliveryDate                = ls_item-deliverydate
+                %data-RequisitionerName           = sy-uname
+              )
+            )
+          )
+        )
 
+      FAILED   DATA(failed_create)
+      REPORTED DATA(reported_create)
+          MAPPED DATA(mapped).
 
     " 作成結果判定
-    IF failed_create IS INITIAL
-     AND sy-subrc = 0.
-
-      " コミット実行
-      COMMIT ENTITIES
-        RESPONSE OF i_purchaserequisitiontp
+    IF failed_create IS INITIAL.
+      COMMIT ENTITIES BEGIN
+        RESPONSE OF I_PurchaseRequisitionTP
           FAILED   DATA(lds_commit_failed_crt)
           REPORTED DATA(lds_commit_reported_crt).
 
       " オペレーション更新／作成
-      IF lds_commit_failed_crt IS INITIAL
-        AND sy-subrc = 0.
+      IF lds_commit_failed_crt IS INITIAL.
         ef_success   = abap_true.
-        ef_prno      = lds_commit_reported_crt-purchaserequisition[ 1 ]-PurchaseRequisition.
+        CONVERT KEY OF I_PurchaseRequisitionTP
+          FROM TEMPORARY VALUE #( %pid = mapped-purchaserequisition[ 1 ]-%pid
+                                  %tmp = mapped-purchaserequisition[ 1 ]-%key )
+          TO FINAL(lds_sodoc).
+        ef_prno = lds_sodoc-PurchaseRequisition.
       ENDIF.
 
       "コミットメッセージの取得
@@ -392,6 +393,8 @@ MODIFY ENTITIES OF i_purchaserequisitiontp
         APPEND lds_com_prit-%msg->if_message~get_longtext( ) TO ldt_messages.
         ef_severity = lds_com_prit-%msg->m_severity.
       ENDLOOP.
+
+      COMMIT ENTITIES END.
 
     ELSE.
       " 作成エラー処理

@@ -47,6 +47,8 @@ authorization master( instance, global )
     Ekgrp = EKGRP;
     Waers = WAERS;
     Erdat = ERDAT;
+    CancelReasonCode = CANCEL_REASON_CODE;
+    CancelNote = CANCEL_NOTE;
     MessageStandardtable = MESSAGE_STANDARDTABLE;
     Criticality = CRITICALITY;
     Url = URL;

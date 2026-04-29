@@ -35,7 +35,6 @@ CLASS  zcl_pr_sendmail DEFINITION
     TYPES: BEGIN OF gts_parallel_input,
              iv_filename TYPE zi_att_g8-FileName,
              it_data     TYPE gtt_filedata,
-             iv_receiver TYPE ad_smtpadr,
              iv_subject  TYPE so_obj_des,
            END OF gts_parallel_input.
 
@@ -59,6 +58,7 @@ CLASS  zcl_pr_sendmail DEFINITION
         iv_filename TYPE zi_att_g8-FileName
         it_data     TYPE gtt_filedata
         iv_receiver TYPE ad_smtpadr
+        iv_user     TYPE ztmail_g8-username
         iv_subject  TYPE so_obj_des DEFAULT 'PR Notification'
       EXPORTING
         ev_sent     TYPE abap_bool
@@ -69,6 +69,8 @@ CLASS  zcl_pr_sendmail DEFINITION
         iv_filename TYPE zi_att_g8-FileName
         it_data     TYPE gtt_filedata
         iv_receiver TYPE ad_smtpadr
+        iv_user     TYPE ztmail_g8-username
+        iv_role     TYPE ztmail_g8-role
         iv_subject  TYPE so_obj_des DEFAULT 'PR Release Notification'
       EXPORTING
         ev_sent     TYPE abap_bool
@@ -79,6 +81,7 @@ CLASS  zcl_pr_sendmail DEFINITION
         iv_filename TYPE zi_att_g8-FileName
         it_data     TYPE gtt_filedata
         iv_receiver TYPE ad_smtpadr
+        iv_user     TYPE ztmail_g8-username
         iv_subject  TYPE so_obj_des DEFAULT 'PR Reject Notification'
       EXPORTING
         ev_sent     TYPE abap_bool
@@ -128,62 +131,106 @@ CLASS zcl_pr_sendmail IMPLEMENTATION.
 
 
   METHOD do.
-    " --- TIẾN TRÌNH CON (BACKGROUND TASK) ---
-    " Lưu ý: Không dùng WRITE, không dùng Breakpoint tại đây.
 
     DATA: lds_input  TYPE gts_parallel_input,
           lds_output TYPE gts_parallel_output.
 
-    DATA: lv_sent TYPE abap_bool,
-          lv_msg  TYPE string.
+    DATA: lv_sent     TYPE abap_bool,
+          lv_msg      TYPE string,
+          lv_receiver TYPE ad_smtpadr,
+          lv_username TYPE ztmail_g8-username.
 
-    " 1. Đọc dữ liệu đầu vào
+    " 1. Đọc input
     IMPORT param_input = lds_input FROM DATA BUFFER p_in.
 
-    " 2. Gọi logic gửi mail
-    IF lds_input-iv_subject = 'PR List'.
-      me->send_mail_pr(
-        EXPORTING
-          iv_filename = lds_input-iv_filename
-          it_data     = lds_input-it_data
-          iv_receiver = lds_input-iv_receiver
-          iv_subject  = lds_input-iv_subject
-        IMPORTING
-          ev_sent     = lv_sent
-          ev_message  = lv_msg
-      ).
-    ELSEIF lds_input-iv_subject = 'PR Released List'.
-      me->send_mail_pr_release(
-        EXPORTING
-          iv_filename = lds_input-iv_filename
-          it_data     = lds_input-it_data
-          iv_receiver = lds_input-iv_receiver
-          iv_subject  = lds_input-iv_subject
-        IMPORTING
-          ev_sent     = lv_sent
-          ev_message  = lv_msg
-      ).
-    ELSEIF lds_input-iv_subject = 'PR Rejected List'.
-      me->send_mail_pr_reject(
-        EXPORTING
-          iv_filename = lds_input-iv_filename
-          it_data     = lds_input-it_data
-          iv_receiver = lds_input-iv_receiver
-          iv_subject  = lds_input-iv_subject
-        IMPORTING
-          ev_sent     = lv_sent
-          ev_message  = lv_msg
-      ).
-    ENDIF.
+    " 2. Xác định receiver theo subject
+    CASE lds_input-iv_subject.
+      WHEN 'PR List'.
+        SELECT SINGLE email, username
+          INTO ( @lv_receiver, @lv_username )
+          FROM ztmail_g8
+          WHERE role = 'M_INV'.
 
-    " 3. Gán kết quả trả về cho có lệ
+        me->send_mail_pr(
+          EXPORTING
+            iv_filename = lds_input-iv_filename
+            it_data     = lds_input-it_data
+            iv_receiver = lv_receiver
+            iv_user     = lv_username
+            iv_subject  = lds_input-iv_subject
+          IMPORTING
+            ev_sent     = lv_sent
+            ev_message  = lv_msg
+        ).
+
+      WHEN 'PR Released List' OR 'PR Rejected List'.
+
+        IF lds_input-iv_subject = 'PR Released List'.
+          SELECT SINGLE email, username
+            INTO ( @lv_receiver, @lv_username )
+            FROM ztmail_g8
+            WHERE role = 'S_INV'.
+
+          me->send_mail_pr_release(
+            EXPORTING
+              iv_filename = lds_input-iv_filename
+              it_data     = lds_input-it_data
+              iv_receiver = lv_receiver
+              iv_user     = lv_username
+              iv_role     = 'S_INV'
+              iv_subject  = lds_input-iv_subject
+            IMPORTING
+              ev_sent     = lv_sent
+              ev_message  = lv_msg
+          ).
+
+          SELECT SINGLE email, username
+            INTO ( @lv_receiver, @lv_username )
+            FROM ztmail_g8
+            WHERE role = 'S_PRC'.
+
+          me->send_mail_pr_release(
+            EXPORTING
+              iv_filename = lds_input-iv_filename
+              it_data     = lds_input-it_data
+              iv_receiver = lv_receiver
+              iv_user     = lv_username
+              iv_role     = 'S_PRC'
+              iv_subject  = lds_input-iv_subject
+            IMPORTING
+              ev_sent     = lv_sent
+              ev_message  = lv_msg
+          ).
+        ELSE.
+
+          SELECT SINGLE email, username
+            INTO ( @lv_receiver, @lv_username )
+            FROM ztmail_g8
+            WHERE role = 'S_INV'.
+
+          me->send_mail_pr_reject(
+            EXPORTING
+              iv_filename = lds_input-iv_filename
+              it_data     = lds_input-it_data
+              iv_receiver = lv_receiver
+              iv_user     = lv_username
+              iv_subject  = lds_input-iv_subject
+            IMPORTING
+              ev_sent     = lv_sent
+              ev_message  = lv_msg
+          ).
+        ENDIF.
+
+    ENDCASE.
+
+    " 3. Result
     IF lv_sent = abap_true.
       lds_output-result_message = 'Success'.
     ELSE.
       lds_output-result_message = |Error: { lv_msg }|.
     ENDIF.
 
-    " 4. Đóng gói kết quả đầu ra
+    " 4. Export output
     EXPORT param_output = lds_output TO DATA BUFFER p_out.
 
   ENDMETHOD.
@@ -212,7 +259,7 @@ CLASS zcl_pr_sendmail IMPLEMENTATION.
 
     " --- 1. XÂY DỰNG NỘI DUNG HTML ---
     APPEND '<!DOCTYPE html><html><body style="font-family:Arial, sans-serif; font-size:12px;">' TO it_contents_txt.
-    APPEND '<p>Dear <strong>User</strong>,</p>' TO it_contents_txt.
+    APPEND |<p>Dear <strong>{ iv_user }</strong>,</p>| TO it_contents_txt.
 
     wa_content-line = |<p><strong>Define Key:</strong> { iv_filename }</p>|.
     APPEND wa_content TO it_contents_txt.
@@ -262,7 +309,7 @@ CLASS zcl_pr_sendmail IMPLEMENTATION.
       lv_status_text = <fs_row>-status.
 
       CASE lv_status_text.
-        WHEN 'not release'.
+        WHEN 'Not release'.
           lv_status_color = '#9e9e9e'.   " gray
         WHEN 'PR Released'.
           lv_status_color = '#2e7d32'.   " green
@@ -471,13 +518,22 @@ CLASS zcl_pr_sendmail IMPLEMENTATION.
     " ===== 1. BUILD HTML CONTENT =====
     APPEND '<!DOCTYPE html><html><body style="font-family:Arial; font-size:12px;">'
         TO it_contents_txt.
-    APPEND '<p>Dear User,</p>' TO it_contents_txt.
+    APPEND |<p>Dear <strong>{ iv_user }</strong>,</p>| TO it_contents_txt.
 
     wa_content-line = |<p><strong>Define Key:</strong> { iv_filename }</p>|.
     APPEND wa_content TO it_contents_txt.
 
     wa_content-line = |<h3 style="color:#4CAF50;">{ iv_subject }</h3>|.
     APPEND wa_content TO it_contents_txt.
+
+    IF iv_role = 'S_PRC'.
+
+    wa_content-line = |<h2 style="color: #4CAF50;">Convert PR to PO Application link: </h2>|.
+    APPEND wa_content TO it_contents_txt.
+      wa_content-line = |<a href="https://s35.gb.ucc.cit.tum.de/sap/bc/ui5_ui5/sap/zsb_u2_pr_rls?sap-client=302">Mass PR release</a>|.
+      wa_content-line = |<a href="https://s35.gb.ucc.cit.tum.de/sap/bc/ui5_ui5/sap/zsb_u2_convert?sap-client=302">Mass convert PR to PO</a>|.
+      APPEND wa_content TO it_contents_txt.
+    ENDIF.
 
     APPEND '<p>Purchase Requisition summary information:</p>'
         TO it_contents_txt.
@@ -580,7 +636,7 @@ CLASS zcl_pr_sendmail IMPLEMENTATION.
     " ===== 1. BUILD HTML CONTENT =====
     APPEND '<!DOCTYPE html><html><body style="font-family:Arial; font-size:12px;">'
         TO it_contents_txt.
-    APPEND '<p>Dear User,</p>' TO it_contents_txt.
+    APPEND |<p>Dear <strong>{ iv_user }</strong>,</p>| TO it_contents_txt.
 
     wa_content-line = |<p><strong>Define Key:</strong> { iv_filename }</p>|.
     APPEND wa_content TO it_contents_txt.

@@ -4,12 +4,14 @@ CLASS lhc_item DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS updateItemPrice2 FOR DETERMINE ON MODIFY
       IMPORTING keys FOR item~updateItemPrice2.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR item RESULT result.
 
 ENDCLASS.
 
 CLASS lhc_item IMPLEMENTATION.
 
-METHOD updateItemPrice2.
+  METHOD updateItemPrice2.
     DATA: lt_update_item TYPE TABLE FOR UPDATE zi_rldhead_g8\\item.
 
     " 1. Đọc item vừa được trigger để lấy giá trị Netpr mới nhất
@@ -67,6 +69,43 @@ METHOD updateItemPrice2.
         REPORTED DATA(lt_reported_item)
         FAILED   DATA(lt_failed_item).
     ENDIF.
+
+  ENDMETHOD.
+
+  METHOD get_instance_features.
+
+    READ ENTITIES OF zi_rldhead_g8 IN LOCAL MODE
+      ENTITY item
+      ALL FIELDS
+      WITH CORRESPONDING #( keys )
+      RESULT DATA(ldt_data).
+
+    result = VALUE #(
+      FOR lds_data IN ldt_data
+        ( %tky = lds_data-%tky
+
+          %features = VALUE #(
+
+            %field-PRItem                          = if_abap_behv=>fc-f-read_only
+            %field-Purchaserequisitiontype         = if_abap_behv=>fc-f-read_only
+            %field-Purreqndescription              = if_abap_behv=>fc-f-read_only
+            %field-Material                        = if_abap_behv=>fc-f-read_only
+            %field-QuantityReq                     = if_abap_behv=>fc-f-read_only
+            %field-Unit                            = if_abap_behv=>fc-f-read_only
+            %field-Purchaserequisitionitemtext     = if_abap_behv=>fc-f-read_only
+            %field-Accountassignmentcategory       = if_abap_behv=>fc-f-read_only
+            %field-Purchaserequisitionprice        = if_abap_behv=>fc-f-read_only
+            %field-Purreqnitemcurrency             = if_abap_behv=>fc-f-read_only
+            %field-Materialgroup                   = if_abap_behv=>fc-f-read_only
+            %field-Plant                           = if_abap_behv=>fc-f-read_only
+            %field-PurchasingGroup                 = if_abap_behv=>fc-f-read_only
+            %field-Purchasingorganization          = if_abap_behv=>fc-f-read_only
+            %field-DeliveryDate                    = if_abap_behv=>fc-f-read_only
+            %field-Url                             = if_abap_behv=>fc-f-read_only
+
+          )
+        )
+    ).
 
   ENDMETHOD.
 
@@ -264,6 +303,8 @@ CLASS lcl_handler IMPLEMENTATION.
 
     lo_pr_release = NEW zcl_create_po( ).
 
+    SORT lt_head_data BY PrNo.
+
     LOOP AT lt_head_data INTO DATA(lds_head).
 
       CLEAR lds_parallel_input.
@@ -294,22 +335,25 @@ CLASS lcl_handler IMPLEMENTATION.
             THEN 'Create PO failed'
         ).
 
+      READ TABLE lt_head_data INTO DATA(lds_head_data)
+          WITH KEY prno = lds_output-pr_number
+                   BINARY SEARCH.
+      IF sy-subrc = 0.
+
+        "メッセージおよびステータスを更新
+        MODIFY ENTITIES OF zi_rldhead_g8 IN LOCAL MODE
+            ENTITY header
+            UPDATE FIELDS ( status messagestandardtable criticality )
+            WITH VALUE #(
+                ( %tky                 = lds_head_data-%tky
+                  Status               = lv_status_text
+                  Criticality          = lds_output-criticality
+                  MessageStandardtable = lds_output-message ) ).
+      ENDIF.
+
       DATA lv_url TYPE string.
 
-      "Update current header only
-      MODIFY ENTITIES OF zi_rldhead_g8 IN LOCAL MODE
-        ENTITY header
-        UPDATE
-        FIELDS ( Status PoNo Criticality MessageStandardtable Url )
-        WITH VALUE #(
-          ( %tky                 = lds_head-%tky
-            Status               = lv_status_text
-            PoNo                 = lds_output-po_number
-            Criticality          = lds_output-criticality
-            Url                  = lv_url
-            MessageStandardtable = lds_output-message ) ).
-
-      IF lds_output-criticality = 3.
+      IF lds_output-criticality <> 1.
         lds_senmail-bsart = 'NB'.
         lds_senmail-bukrs = 'PH06'.
         lds_senmail-ebeln = lds_output-po_number.
@@ -319,89 +363,104 @@ CLASS lcl_handler IMPLEMENTATION.
         lds_senmail-lifnr = lds_head-Lifnr.
         lds_senmail-waers = lds_item-Purreqnitemcurrency.
         APPEND lds_senmail TO ldt_senmail.
-      DATA(lv_po) = lds_output-po_number.
+        DATA(lv_po) = lds_output-po_number.
 
-      lv_url =
-        |https://s35lp1.ucc.cit.tum.de:8100/sap/bc/ui2/flp#PurchaseOrder-manage|
-        && |&/C_PurchaseOrderTP(|
-        && |PurchaseOrder='{ lv_po }',|
-        && |DraftUUID=guid'00000000-0000-0000-0000-000000000000',|
-        && |IsActiveEntity=true)|.
+        lv_url =
+          |https://s35lp1.ucc.cit.tum.de:8100/sap/bc/ui2/flp#PurchaseOrder-manage|
+          && |&/C_PurchaseOrderTP(|
+          && |PurchaseOrder='{ lv_po }',|
+          && |DraftUUID=guid'00000000-0000-0000-0000-000000000000',|
+          && |IsActiveEntity=true)|.
 
-      MODIFY ENTITIES OF ZI_RLSHEAD_PO_G8
-        ENTITY header
-          CREATE
-          FIELDS (
-             ebeln
-             bukrs
-             ekgrp
-             ekorg
-             erdat
-             lifnr
-             waers
-             DefineKey
-             Status
-             Url
-          )
+        "Update current header only
+        MODIFY ENTITIES OF zi_rldhead_g8 IN LOCAL MODE
+          ENTITY header
+          UPDATE
+          FIELDS ( Status PoNo Criticality MessageStandardtable Url )
           WITH VALUE #(
-            (
-              %cid      = |HEAD_| && sy-tabix
-              ebeln     = lds_output-po_number
-              bukrs     = 'PH06'
-              ekgrp     = lds_head-PurchasingGroup
-              ekorg     = lds_head-Purchasingorganization
-              erdat     = sy-datum
-              lifnr     = lds_head-Lifnr
-              waers     = lds_item-Purreqnitemcurrency
-              DefineKey = lds_head-DefineKey
-              Status    = 'Not release'
-              Url       = lv_url
-            )
-          )
+            ( %tky                 = lds_head-%tky
+              Status               = lv_status_text
+              PoNo                 = lds_output-po_number
+              Criticality          = lds_output-criticality
+              Url                  = lv_url
+              MessageStandardtable = lds_output-message ) ).
 
-        ENTITY header
-        CREATE BY \_Item
-          FIELDS (
-            Ebelp
-            banfn
-            bnfpo
-            matnr
-            werks
-            menge
-            meins
-            netpr
-            waers
-            eindt
-            Url
-            UrlPR
-          )
-          AUTO FILL CID WITH VALUE #(
-            (
-              %cid_ref = |HEAD_| && sy-tabix
-              %target  = VALUE #(
-                FOR lds_item_crt IN lt_item_data WHERE ( PrNo = lds_head-PrNo )
-                (
-                  Ebelp = lds_item_crt-PrItem
-                  banfn = lds_item_crt-PrNo
-                  bnfpo = lds_item_crt-PrItem
-                  matnr = lds_item_crt-Material
-                  werks = lds_item_crt-Plant
-                  menge = lds_item_crt-QuantityReq
-                  meins = lds_item_crt-Unit
-                  netpr = lds_item_crt-Netpr
-                  waers = lds_item_crt-Purreqnitemcurrency
-                  eindt = lds_item_crt-DeliveryDate
-                  Url   = lv_url
-                  UrlPR = lds_item-Url
+
+
+        MODIFY ENTITIES OF zi_rlshead_po_g8
+          ENTITY header
+            CREATE
+            FIELDS (
+               ebeln
+               bukrs
+               ekgrp
+               ekorg
+               erdat
+               lifnr
+               waers
+               DefineKey
+               Status
+               Url
+            )
+            WITH VALUE #(
+              (
+                %cid      = |HEAD_| && sy-tabix
+                ebeln     = lds_output-po_number
+                bukrs     = 'PH06'
+                ekgrp     = lds_head-PurchasingGroup
+                ekorg     = lds_head-Purchasingorganization
+                erdat     = sy-datum
+                lifnr     = lds_head-Lifnr
+                waers     = lds_item-Purreqnitemcurrency
+                DefineKey = lds_head-DefineKey
+                Status    = 'Not release'
+                Url       = lv_url
+              )
+            )
+
+          ENTITY header
+          CREATE BY \_Item
+            FIELDS (
+              Ebelp
+              banfn
+              bnfpo
+              matnr
+              werks
+              menge
+              meins
+              netpr
+              waers
+              eindt
+              Url
+              UrlPR
+            )
+            AUTO FILL CID WITH VALUE #(
+              (
+                %cid_ref = |HEAD_| && sy-tabix
+                %target  = VALUE #(
+                  FOR lds_item_crt IN lt_item_data WHERE ( PrNo = lds_head-PrNo )
+                  (
+                    Ebelp = lds_item_crt-PrItem
+                    banfn = lds_item_crt-PrNo
+                    bnfpo = lds_item_crt-PrItem
+                    matnr = lds_item_crt-Material
+                    werks = lds_item_crt-Plant
+                    menge = lds_item_crt-QuantityReq
+                    meins = lds_item_crt-Unit
+                    netpr = lds_item_crt-Netpr
+                    waers = lds_item_crt-Purreqnitemcurrency
+                    eindt = lds_item_crt-DeliveryDate
+                    Url   = lv_url
+                    UrlPR = lds_item-Url
+                  )
                 )
               )
             )
-          )
 
 
-        REPORTED DATA(ldt_reported_create)
-        FAILED   DATA(ldt_failed_create)
-        MAPPED   DATA(ldt_mapped_create).
+          REPORTED DATA(ldt_reported_create)
+          FAILED   DATA(ldt_failed_create)
+          MAPPED   DATA(ldt_mapped_create).
 
       ENDIF.
     ENDLOOP.

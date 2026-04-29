@@ -46,6 +46,7 @@
         iv_define_key TYPE sysuuid_x16
         it_data       TYPE gtt_po_data
         iv_receiver   TYPE ad_smtpadr
+        iv_user       TYPE ztmail_g8-username
         iv_subject    TYPE so_obj_des
       EXPORTING
         ev_sent       TYPE abap_bool
@@ -92,15 +93,23 @@ CLASS zcl_po_sendmail IMPLEMENTATION.
           lds_output TYPE gts_parallel_output.
 
     DATA: lv_sent TYPE abap_bool,
-          lv_msg  TYPE string.
+          lv_msg  TYPE string,
+          lv_receiver TYPE ad_smtpadr,
+          lv_username TYPE ztmail_g8-username.
 
     IMPORT param_input = lds_input FROM DATA BUFFER p_in.
+
+      SELECT SINGLE email, username
+        INTO ( @lv_receiver, @lv_username )
+        FROM ztmail_g8
+        WHERE role = 'M_PRC'.
 
     me->send_mail_po(
       EXPORTING
         iv_define_key = lds_input-iv_define_key
         it_data       = lds_input-it_data
-        iv_receiver   = lds_input-iv_receiver
+        iv_receiver   = lv_receiver
+        iv_user       = lv_username
         iv_subject    = lds_input-iv_subject
       IMPORTING
         ev_sent       = lv_sent
@@ -132,12 +141,18 @@ CLASS zcl_po_sendmail IMPLEMENTATION.
     " ===== 1. BUILD HTML CONTENT =====
     APPEND '<!DOCTYPE html><html><body style="font-family:Arial; font-size:12px;">'
         TO it_contents_txt.
-    APPEND '<p>Dear User,</p>' TO it_contents_txt.
+    APPEND |<p>Dear <strong>{ iv_user }</strong>,</p>| TO it_contents_txt.
 
     wa_content-line = |<p><strong>Define Key:</strong> { iv_define_key }</p>|.
     APPEND wa_content TO it_contents_txt.
 
     wa_content-line = |<h3 style="color:#4CAF50;">{ iv_subject }</h3>|.
+    APPEND wa_content TO it_contents_txt.
+
+    wa_content-line = |<h2 style="color: #4CAF50;">Release PO Application link: </h2>|.
+    APPEND wa_content TO it_contents_txt.
+
+    wa_content-line = |<a href="https://s35.gb.ucc.cit.tum.de/sap/bc/ui5_ui5/sap/zsb_u2_po_rls?sap-client=302">Mass PO release</a>|.
     APPEND wa_content TO it_contents_txt.
 
     APPEND '<p>Purchase Order summary information:</p>'

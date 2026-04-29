@@ -36,11 +36,11 @@ CLASS lcl_handler IMPLEMENTATION.
           THEN if_abap_behv=>fc-o-enabled
           ELSE if_abap_behv=>fc-o-disabled )
 
-          %features-%action-unreleasePR = COND #(
-          WHEN lds_pr-Status = 'PR Released'
-            OR lds_pr-Status = 'Not release'
-          THEN if_abap_behv=>fc-o-enabled
-          ELSE if_abap_behv=>fc-o-disabled )
+*          %features-%action-unreleasePR = COND #(
+*          WHEN lds_pr-Status = 'PR Released'
+*            OR lds_pr-Status = 'Not release'
+*          THEN if_abap_behv=>fc-o-enabled
+*          ELSE if_abap_behv=>fc-o-disabled )
 
       %features-%update = if_abap_behv=>fc-o-disabled
 
@@ -105,7 +105,6 @@ CLASS lcl_handler IMPLEMENTATION.
     IF ldt_senmail IS NOT INITIAL.
       lds_sendmail_input-iv_filename = ls_pr-DefineKey.
       lds_sendmail_input-it_data = ldt_senmail.
-      lds_sendmail_input-iv_receiver = 'datnb258@gmail.com'.
       lds_sendmail_input-iv_subject = 'PR Released List'.
       DATA(lo_process_sendmail) = NEW zcl_pr_sendmail( ).
       lo_process_sendmail->execute_parallel( lds_sendmail_input ).
@@ -159,12 +158,12 @@ CLASS lcl_handler IMPLEMENTATION.
 
       IF ls_output-criticality = 3.
         DATA(ldv_reason) = keys[ KEY draft %tky = lt_pr_data[ 1 ]-%tky ]-%param-CancelReasonCode.
-        DATA ldv_note TYPE zpr_rejres_g8-cancel_reason_note.
+*        DATA ldv_note TYPE zpr_rejres_g8-cancel_reason_note.
 
-        SELECT SINGLE cancel_reason_note
-          FROM zpr_rejres_g8
-          WHERE cancel_reason_code = @ldv_reason
-          INTO @ldv_note.
+*        SELECT SINGLE cancel_reason_note
+*          FROM zpr_rejres_g8
+*          WHERE cancel_reason_code = @ldv_reason
+*          INTO @ldv_note.
       ENDIF.
 
       " --- QUAN TRỌNG: Cập nhật lại vào Entity (Database) ---
@@ -181,14 +180,14 @@ CLASS lcl_handler IMPLEMENTATION.
 
               Status      = lv_status_text
               CancelReasonCode = ldv_reason
-              CancelNote = ldv_note
+*              CancelNote = ldv_note
               Criticality = lv_criticality
               MessageStandardtable = ls_output-message
             )
           ).
 
         MOVE-CORRESPONDING ls_pr TO lds_senmail.
-        lds_senmail-rejectreason = ldv_note.
+        lds_senmail-rejectreason = ldv_reason.
         APPEND lds_senmail TO ldt_senmail.
       ELSE.
         MODIFY ENTITIES OF zi_rlshead_g8 IN LOCAL MODE
@@ -200,7 +199,7 @@ CLASS lcl_handler IMPLEMENTATION.
              %tky        = ls_pr-%tky
 
              CancelReasonCode = ldv_reason
-             CancelNote = ldv_note
+*             CancelNote = ldv_note
              MessageStandardtable = ls_output-message
            )
          ).
@@ -212,7 +211,6 @@ CLASS lcl_handler IMPLEMENTATION.
     IF ldt_senmail IS NOT INITIAL.
       lds_sendmail_input-iv_filename = ls_pr-DefineKey.
       lds_sendmail_input-it_data     = ldt_senmail.
-      lds_sendmail_input-iv_receiver = 'datnb258@gmail.com'.
       lds_sendmail_input-iv_subject  = 'PR Rejected List'.
 
       DATA(lo_process_sendmail) = NEW zcl_pr_sendmail( ).
