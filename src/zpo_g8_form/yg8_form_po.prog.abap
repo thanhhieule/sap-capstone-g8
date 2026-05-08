@@ -5,6 +5,7 @@ REPORT yg8_form_po NO STANDARD PAGE HEADING.
 *---------------------------------------------------------------------*
 TYPES: BEGIN OF ts_po_header,
          po_number    TYPE ekko-ebeln,
+         pr_number    TYPE ekpo-banfn,
          company_code TYPE ekko-bukrs,
          company_name TYPE t001-butxt,
          vendor_id    TYPE ekko-lifnr,
@@ -17,10 +18,10 @@ TYPES: BEGIN OF ts_po_header,
          bank_key     TYPE lfbk-bankl,
          bank_acc     TYPE lfbk-bankn,
          bank_holder  TYPE lfbk-koinh,
-         price_score  TYPE elbp-beurt, " gia ca
-         qual_score   TYPE elbp-beurt, "chat luong
-         deliv_score  TYPE elbp-beurt, " giao hang
-         serv_score   TYPE elbp-beurt, " dich vu
+         price_score  TYPE elbp-beurt, " price
+         qual_score   TYPE elbp-beurt, " quality
+         deliv_score  TYPE elbp-beurt, " delivery
+         serv_score   TYPE elbp-beurt, " service
          zterm        TYPE lfb1-zterm,
 
        END OF ts_po_header.
@@ -103,10 +104,14 @@ AT LINE-SELECTION.
 *---------------------------------------------------------------------*
 * GET HEADER
 *---------------------------------------------------------------------*
+
+
+
 FORM get_po_header.
 
 
   SELECT a~ebeln AS po_number,
+         i~banfn AS pr_number, " get PR
          a~bukrs AS company_code,
          b~butxt AS company_name,
          a~lifnr AS vendor_id,
@@ -115,18 +120,24 @@ FORM get_po_header.
          a~ekgrp AS pur_group,
          a~waers AS currency,
          a~bedat AS created_date,
-         d~gesbu AS vendor_grade,
+         "d~gesbu AS vendor_grade,
+         z~vendor_rate AS vendor_grade, "get from Z structure
+
          e~bankl AS bank_key,    " Bank Key
-       e~bankn AS bank_acc,    " Bank Account
-       e~koinh AS bank_holder  "  Account Holder
+         e~bankn AS bank_acc,    " Bank Account
+         e~koinh AS bank_holder,  "  Account Holder
+         z~price_rate  AS price_score,  "
+         z~qual_rate   AS qual_score,   "
+         z~delv_rate   AS deliv_score,  "
+         z~serv_rate   AS serv_score
     FROM ekko AS a
+    INNER JOIN ekpo AS i ON a~ebeln = i~ebeln AND i~ebelp = '00010' " get PR from PO 1st item
     LEFT JOIN t001 AS b
       ON a~bukrs = b~bukrs
     LEFT JOIN lfa1 AS c
       ON a~lifnr = c~lifnr
-    LEFT JOIN elbk AS d              " <-- Join grade vendor
-      ON a~lifnr = d~lifnr           " Khop mã Vendor
-     AND a~ekorg = d~ekorg           " Khop Purchasing Org
+
+    LEFT JOIN zpo_rlshead_g8 AS z ON a~ebeln = z~ebeln "join
     LEFT JOIN lfbk AS e ON a~lifnr = e~lifnr AND e~bvtyp = '001'
     WHERE a~ebeln IN @s_ponum
   AND a~bukrs = @p_bukrs
@@ -136,33 +147,10 @@ FORM get_po_header.
   IF gt_header IS NOT INITIAL.
     LOOP AT gt_header ASSIGNING FIELD-SYMBOL(<fs_head>).
 
+
       SELECT SINGLE zterm FROM lfb1 INTO @<fs_head>-zterm
         WHERE lifnr = @<fs_head>-vendor_id
           AND bukrs = @<fs_head>-company_code.
-
-      " 20 price
-      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-price_score
-        WHERE lifnr = @<fs_head>-vendor_id
-          AND ekorg = @<fs_head>-pur_org
-          AND hkrit = '20'.
-
-      " Mã 21 score
-      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-qual_score
-        WHERE lifnr = @<fs_head>-vendor_id
-          AND ekorg = @<fs_head>-pur_org
-          AND hkrit = '21'.
-
-      "  (Mã 22)  delivery
-      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-deliv_score
-        WHERE lifnr = @<fs_head>-vendor_id
-          AND ekorg = @<fs_head>-pur_org
-          AND hkrit = '22'.
-
-      " (Mã 23)  service
-      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-serv_score
-        WHERE lifnr = @<fs_head>-vendor_id
-          AND ekorg = @<fs_head>-pur_org
-          AND hkrit = '23'.
 
     ENDLOOP.
   ENDIF.
@@ -244,8 +232,8 @@ FORM display_report.
 
   SET BLANK LINES ON. " keep blank line
 
-  LOOP AT GT_HEADER INTO GS_CURRENT_HEADER.
-    WRITE: / '- PO Number:', GS_CURRENT_HEADER-PO_NUMBER.
+  LOOP AT gt_header INTO gs_current_header.
+    WRITE: / '- PO Number:', gs_current_header-po_number.
   ENDLOOP.
 
 ENDFORM.
@@ -269,6 +257,7 @@ FORM show_form USING is_control TYPE ssfctrlop.
   ls_head-ekgrp = gs_current_header-pur_group.
   ls_head-waers = gs_current_header-currency.
   ls_head-erdat = gs_current_header-created_date.
+
   ls_head-gesbu = gs_current_header-vendor_grade.
   ls_head-price_score  = gs_current_header-price_score. "
   ls_head-qual_score   = gs_current_header-qual_score.
@@ -361,7 +350,7 @@ FORM show_form USING is_control TYPE ssfctrlop.
       internal_error     = 2
       send_error         = 3
       user_canceled      = 4
-      others             = 5.
+      OTHERS             = 5.
 
   IF sy-subrc <> 0.
     " err
@@ -374,8 +363,8 @@ ENDFORM.
 
 FORM print_all_pos USING iv_type TYPE char4.
   DATA: ls_control TYPE ssfctrlop.
-  DATA: lv_index   TYPE i,
-        lv_total   TYPE i.
+  DATA: lv_index TYPE i,
+        lv_total TYPE i.
 
   lv_total = lines( gt_header ).
   lv_index = 0.

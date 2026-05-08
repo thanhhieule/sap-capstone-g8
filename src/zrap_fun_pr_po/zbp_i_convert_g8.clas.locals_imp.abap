@@ -354,6 +354,40 @@ CLASS lcl_handler IMPLEMENTATION.
       DATA lv_url TYPE string.
 
       IF lds_output-criticality <> 1.
+        SELECT SINGLE gesbu
+          FROM elbk
+          WHERE ekorg = @lds_head-PurchasingOrganization
+            AND lifnr = @lds_head-Lifnr
+          INTO @DATA(lv_vendorrate).
+
+        SELECT SINGLE beurt
+          FROM elbp
+          WHERE ekorg = @lds_head-PurchasingOrganization
+            AND lifnr = @lds_head-Lifnr
+            AND hkrit = '20'
+          INTO @DATA(lv_pricerate).
+
+        SELECT SINGLE beurt
+          FROM elbp
+          WHERE ekorg = @lds_head-PurchasingOrganization
+            AND lifnr = @lds_head-Lifnr
+            AND hkrit = '21'
+          INTO @DATA(lv_qualrate).
+
+        SELECT SINGLE beurt
+          FROM elbp
+          WHERE ekorg = @lds_head-PurchasingOrganization
+            AND lifnr = @lds_head-Lifnr
+            AND hkrit = '22'
+          INTO @DATA(lv_delvrate).
+
+        SELECT SINGLE beurt
+          FROM elbp
+          WHERE ekorg = @lds_head-PurchasingOrganization
+            AND lifnr = @lds_head-Lifnr
+            AND hkrit = '23'
+          INTO @DATA(lv_servrate).
+
         lds_senmail-bsart = 'NB'.
         lds_senmail-bukrs = 'PH06'.
         lds_senmail-ebeln = lds_output-po_number.
@@ -401,6 +435,11 @@ CLASS lcl_handler IMPLEMENTATION.
                DefineKey
                Status
                Url
+               VendorRate
+               PriceRate
+               QualRate
+               DelvRate
+               ServRate
             )
             WITH VALUE #(
               (
@@ -415,6 +454,11 @@ CLASS lcl_handler IMPLEMENTATION.
                 DefineKey = lds_head-DefineKey
                 Status    = 'Not release'
                 Url       = lv_url
+                VendorRate = lv_vendorrate
+               PriceRate  = lv_pricerate
+               QualRate   = lv_QualRate
+               DelvRate   = lv_DelvRate
+               ServRate   = lv_ServRate
               )
             )
 

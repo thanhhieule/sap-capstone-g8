@@ -5,6 +5,7 @@ REPORT yg8_form_TEST_po NO STANDARD PAGE HEADING.
 *---------------------------------------------------------------------*
 TYPES: BEGIN OF ts_po_header,
          po_number    TYPE ekko-ebeln,
+         pr_number    TYPE ekpo-banfn,
          company_code TYPE ekko-bukrs,
          company_name TYPE t001-butxt,
          vendor_id    TYPE ekko-lifnr,
@@ -17,10 +18,10 @@ TYPES: BEGIN OF ts_po_header,
          bank_key     TYPE lfbk-bankl,
          bank_acc     TYPE lfbk-bankn,
          bank_holder  TYPE lfbk-koinh,
-         price_score  TYPE elbp-beurt, " gia ca
-         qual_score   TYPE elbp-beurt, "chat luong
-         deliv_score  TYPE elbp-beurt, " giao hang
-         serv_score   TYPE elbp-beurt, " dich vu
+         price_score  TYPE elbp-beurt, " price
+         qual_score   TYPE elbp-beurt, " quality
+         deliv_score  TYPE elbp-beurt, " delivery
+         serv_score   TYPE elbp-beurt, " service
          zterm        TYPE lfb1-zterm,
 
        END OF ts_po_header.
@@ -91,7 +92,7 @@ START-OF-SELECTION.
 *  PERFORM show_form.
 
 AT LINE-SELECTION.
-  " Dùng toán tử CS (Contains String) thay vì CONTAINS
+
   IF sy-lisel CS 'INTERNAL'.
     PERFORM print_all_pos USING 'INT'.
   ELSEIF sy-lisel CS 'PURCHASE ORDER FORM'.
@@ -103,10 +104,14 @@ AT LINE-SELECTION.
 *---------------------------------------------------------------------*
 * GET HEADER
 *---------------------------------------------------------------------*
+
+
+
 FORM get_po_header.
 
 
   SELECT a~ebeln AS po_number,
+         i~banfn AS pr_number, " get PR
          a~bukrs AS company_code,
          b~butxt AS company_name,
          a~lifnr AS vendor_id,
@@ -115,18 +120,26 @@ FORM get_po_header.
          a~ekgrp AS pur_group,
          a~waers AS currency,
          a~bedat AS created_date,
-         d~gesbu AS vendor_grade,
-         e~bankl AS bank_key,    " <--- Thêm Bank Key
-       e~bankn AS bank_acc,    " <--- Thêm Bank Account
-       e~koinh AS bank_holder  " <--- Thêm Account Holder
+         "d~gesbu AS vendor_grade,
+         z~vendor_rate AS vendor_grade, "get from Z structure
+
+         e~bankl AS bank_key,    " Bank Key
+         e~bankn AS bank_acc,    " Bank Account
+         e~koinh AS bank_holder,  "  Account Holder
+         z~price_rate  AS price_score,  "
+         z~qual_rate   AS qual_score,   "
+         z~delv_rate   AS deliv_score,  "
+         z~serv_rate   AS serv_score
     FROM ekko AS a
+    INNER JOIN ekpo AS i ON a~ebeln = i~ebeln AND i~ebelp = '00010' " get PR from PO 1st item
     LEFT JOIN t001 AS b
       ON a~bukrs = b~bukrs
     LEFT JOIN lfa1 AS c
       ON a~lifnr = c~lifnr
-    LEFT JOIN elbk AS d              " <-- Join thêm grade vendor
-      ON a~lifnr = d~lifnr           " Khop mã Vendor
-     AND a~ekorg = d~ekorg           " Khop Purchasing Org
+    "LEFT JOIN elbk AS d              " <-- Join grade vendor
+     " ON a~lifnr = d~lifnr           " Khop mã Vendor
+    " AND a~ekorg = d~ekorg           " Khop Purchasing Org
+    LEFT JOIN zpo_rlshead_g8 AS z ON a~ebeln = z~ebeln "join base on PR
     LEFT JOIN lfbk AS e ON a~lifnr = e~lifnr AND e~bvtyp = '001'
     WHERE a~ebeln IN @s_ponum
   AND a~bukrs = @p_bukrs
@@ -136,33 +149,34 @@ FORM get_po_header.
   IF gt_header IS NOT INITIAL.
     LOOP AT gt_header ASSIGNING FIELD-SYMBOL(<fs_head>).
 
+
       SELECT SINGLE zterm FROM lfb1 INTO @<fs_head>-zterm
         WHERE lifnr = @<fs_head>-vendor_id
           AND bukrs = @<fs_head>-company_code.
-
-      " 20
-      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-price_score
-        WHERE lifnr = @<fs_head>-vendor_id
-          AND ekorg = @<fs_head>-pur_org
-          AND hkrit = '20'.
-
-      " Mã 21)
-      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-qual_score
-        WHERE lifnr = @<fs_head>-vendor_id
-          AND ekorg = @<fs_head>-pur_org
-          AND hkrit = '21'.
-
-      "  (Mã 22)
-      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-deliv_score
-        WHERE lifnr = @<fs_head>-vendor_id
-          AND ekorg = @<fs_head>-pur_org
-          AND hkrit = '22'.
-
-      " (Mã 23)
-      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-serv_score
-        WHERE lifnr = @<fs_head>-vendor_id
-          AND ekorg = @<fs_head>-pur_org
-          AND hkrit = '23'.
+*
+*      " 20 price
+*      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-price_score
+*        WHERE lifnr = @<fs_head>-vendor_id
+*          AND ekorg = @<fs_head>-pur_org
+*          AND hkrit = '20'.
+*
+*      " 21 score
+*      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-qual_score
+*        WHERE lifnr = @<fs_head>-vendor_id
+*          AND ekorg = @<fs_head>-pur_org
+*          AND hkrit = '21'.
+*
+*      "  22  delivery
+*      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-deliv_score
+*        WHERE lifnr = @<fs_head>-vendor_id
+*          AND ekorg = @<fs_head>-pur_org
+*          AND hkrit = '22'.
+*
+*      " 23  service
+*      SELECT SINGLE beurt FROM elbp INTO @<fs_head>-serv_score
+*        WHERE lifnr = @<fs_head>-vendor_id
+*          AND ekorg = @<fs_head>-pur_org
+*          AND hkrit = '23'.
 
     ENDLOOP.
   ENDIF.
@@ -223,34 +237,31 @@ ENDFORM.
 * DISPLAY REPORT
 *---------------------------------------------------------------------*
 
-
 FORM display_report.
-  " 1. Hiển thị danh sách các PO đã tìm thấy
-  WRITE: / 'DANH SÁCH PURCHASE ORDER ĐÃ CHỌN:'.
+
+  WRITE: / 'Choose form type to print all purchase order:'.
   ULINE.
 
-  LOOP AT GT_HEADER INTO GS_CURRENT_HEADER.
-    WRITE: / '- PO Number:', GS_CURRENT_HEADER-PO_NUMBER.
+  FORMAT COLOR COL_POSITIVE.
+  WRITE: / '[ PRINT INTERNAL PURCHASE ORDER FORM ]' HOTSPOT ON.
+  FORMAT COLOR COL_HEADING.
+  WRITE: / '[ PRINT EXTERNAL PURCHASE ORDER FORM ]' HOTSPOT ON.
+  FORMAT COLOR COL_TOTAL.
+  WRITE: / '[ PRINT VENDOR SELECTION APPROVAL ]' HOTSPOT ON.
+  FORMAT COLOR OFF.
+
+*  SKIP 1.
+  ULINE.
+  WRITE: / 'List of selected purchase order (Scroll down to see more):'.
+  ULINE.
+
+
+  SET BLANK LINES ON. " keep blank line
+
+  LOOP AT gt_header INTO gs_current_header.
+    WRITE: / '- PO Number:', gs_current_header-po_number.
   ENDLOOP.
 
-  SKIP 2.
-  WRITE: / 'CHỌN LOẠI FORM ĐỂ IN TẤT CẢ PO TRÊN:'.
-  ULINE.
-
-  " 2. Tạo 3 tùy chọn in ở cuối danh sách
-  " Sử dụng HOTSPOT để khi click vào nó sẽ nhảy vào AT LINE-SELECTION
-  FORMAT COLOR COL_POSITIVE.
-  WRITE: / '[ IN INTERNAL PURCHASE ORDER FORM ]' HOTSPOT ON.
-
-
-  FORMAT COLOR COL_HEADING.
-  WRITE: / '[ IN PURCHASE ORDER FORM ]' HOTSPOT ON.
-
-
-  FORMAT COLOR COL_TOTAL.
-  WRITE: / '[ IN VENDOR SELECTION APPROVAL ]' HOTSPOT ON.
-
-  FORMAT COLOR OFF.
 ENDFORM.
 
 *---------------------------------------------------------------------*
@@ -272,6 +283,7 @@ FORM show_form USING is_control TYPE ssfctrlop.
   ls_head-ekgrp = gs_current_header-pur_group.
   ls_head-waers = gs_current_header-currency.
   ls_head-erdat = gs_current_header-created_date.
+
   ls_head-gesbu = gs_current_header-vendor_grade.
   ls_head-price_score  = gs_current_header-price_score. "
   ls_head-qual_score   = gs_current_header-qual_score.
@@ -318,7 +330,7 @@ FORM show_form USING is_control TYPE ssfctrlop.
   IF lv_lines < 10.
     DO 10 - lv_lines TIMES.
       CLEAR ls_item.
-      ls_item-matnr = ' '. " 👈 QUAN TRỌNG
+      ls_item-matnr = ' '. " blank line
       APPEND ls_item TO lt_item.
     ENDDO.
   ENDIF.
@@ -344,7 +356,7 @@ FORM show_form USING is_control TYPE ssfctrlop.
 
 
   DATA: ls_output_options TYPE ssfcompop.
-  ls_output_options-tdnewid = 'X'. " Tạo Spool mới để gom các PO vào 1 file
+  ls_output_options-tdnewid = 'X'. " Create a new spool to group purchase orders into one file.
 
   CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
     EXPORTING
@@ -354,8 +366,8 @@ FORM show_form USING is_control TYPE ssfctrlop.
 
   CALL FUNCTION lv_fm_name
     EXPORTING
-      control_parameters = is_control        " QUAN TRỌNG: Nhận từ FORM print_all_pos truyền sang
-      output_options     = ls_output_options " QUAN TRỌNG: Cấu hình xuất ra máy in
+      control_parameters = is_control        " get from form print_all_pos
+      output_options     = ls_output_options " Configure printer output settings.
       im_po_head         = ls_head
     TABLES
       tab_items          = lt_item
@@ -364,10 +376,10 @@ FORM show_form USING is_control TYPE ssfctrlop.
       internal_error     = 2
       send_error         = 3
       user_canceled      = 4
-      others             = 5.
+      OTHERS             = 5.
 
   IF sy-subrc <> 0.
-    " Nếu có lỗi thì báo ở đây
+    " err
   ENDIF.
 
 
@@ -377,8 +389,8 @@ ENDFORM.
 
 FORM print_all_pos USING iv_type TYPE char4.
   DATA: ls_control TYPE ssfctrlop.
-  DATA: lv_index   TYPE i,
-        lv_total   TYPE i.
+  DATA: lv_index TYPE i,
+        lv_total TYPE i.
 
   lv_total = lines( gt_header ).
   lv_index = 0.

@@ -19,6 +19,11 @@ define root view entity ZI_RLSHEAD_PO_G8
   cancel_note as CancelNote,
   message_standardtable as MessageStandardtable,
   criticality as Criticality,
+  vendor_rate as VendorRate,
+  price_rate  as PriceRate,
+  qual_rate  as QualRate,
+  delv_rate  as DelvRate,
+  serv_rate  as ServRate,
   url    as Url,
   @Semantics.user.createdBy: true
   created_by as CreatedBy,
